@@ -190,3 +190,7 @@ pub fn get_top_albums(pool: &DbPool, limit: i64, start_date: Option<DateTime<Utc
         Ok(albums)
     }
 }
+
+#[cfg(test)]
+mod tests;
+
