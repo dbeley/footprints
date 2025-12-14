@@ -8,17 +8,12 @@ pub struct Scrobble {
     pub album: Option<String>,
     pub track: String,
     pub timestamp: DateTime<Utc>,
-    pub source: String, // "lastfm" or "listenbrainz"
+    pub source: String,            // "lastfm" or "listenbrainz"
     pub source_id: Option<String>, // Unique ID from source API to prevent duplicates
 }
 
 impl Scrobble {
-    pub fn new(
-        artist: String,
-        track: String,
-        timestamp: DateTime<Utc>,
-        source: String,
-    ) -> Self {
+    pub fn new(artist: String, track: String, timestamp: DateTime<Utc>, source: String) -> Self {
         Self {
             id: None,
             artist,

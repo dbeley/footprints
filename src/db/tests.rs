@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use tempfile::NamedTempFile;
     use crate::db::*;
+    use tempfile::NamedTempFile;
 
     fn setup_test_db() -> (DbPool, NamedTempFile) {
         let temp_file = NamedTempFile::new().unwrap();
@@ -20,7 +20,7 @@ mod tests {
     #[test]
     fn test_insert_scrobble() {
         let (pool, _temp_file) = setup_test_db();
-        
+
         let scrobble = crate::models::Scrobble::new(
             "Test Artist".to_string(),
             "Test Track".to_string(),
@@ -38,7 +38,7 @@ mod tests {
     #[test]
     fn test_get_scrobbles() {
         let (pool, _temp_file) = setup_test_db();
-        
+
         // Insert multiple scrobbles
         for i in 0..5 {
             let scrobble = crate::models::Scrobble::new(
@@ -57,7 +57,7 @@ mod tests {
     #[test]
     fn test_duplicate_prevention() {
         let (pool, _temp_file) = setup_test_db();
-        
+
         let timestamp = chrono::Utc::now();
         let scrobble = crate::models::Scrobble::new(
             "Test Artist".to_string(),
@@ -78,11 +78,11 @@ mod tests {
     #[test]
     fn test_top_artists() {
         let (pool, _temp_file) = setup_test_db();
-        
+
         // Insert scrobbles for different artists at different times
         use std::thread;
         use std::time::Duration;
-        
+
         for i in 0..3 {
             let scrobble = crate::models::Scrobble::new(
                 "Popular Artist".to_string(),
@@ -104,11 +104,17 @@ mod tests {
 
         let top_artists = get_top_artists(&pool, 10, None, None).unwrap();
         assert_eq!(top_artists.len(), 2);
-        
+
         // Find the artists in the list (order might vary)
-        let popular = top_artists.iter().find(|(name, _)| name == "Popular Artist").unwrap();
-        let less_popular = top_artists.iter().find(|(name, _)| name == "Less Popular Artist").unwrap();
-        
+        let popular = top_artists
+            .iter()
+            .find(|(name, _)| name == "Popular Artist")
+            .unwrap();
+        let less_popular = top_artists
+            .iter()
+            .find(|(name, _)| name == "Less Popular Artist")
+            .unwrap();
+
         assert_eq!(popular.1, 3);
         assert_eq!(less_popular.1, 1);
     }

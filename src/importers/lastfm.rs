@@ -81,7 +81,7 @@ impl LastFmImporter {
 
         loop {
             tracing::info!("Fetching Last.fm page {}", page);
-            
+
             let url = format!(
                 "https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks&user={}&api_key={}&format=json&limit={}&page={}",
                 self.username, self.api_key, per_page, page
@@ -112,7 +112,12 @@ impl LastFmImporter {
 
             for track in &data.recenttracks.track {
                 // Skip currently playing tracks
-                if track.attr.as_ref().and_then(|a| a.nowplaying.as_ref()).is_some() {
+                if track
+                    .attr
+                    .as_ref()
+                    .and_then(|a| a.nowplaying.as_ref())
+                    .is_some()
+                {
                     continue;
                 }
 
@@ -121,7 +126,7 @@ impl LastFmImporter {
                         let mut scrobble = Scrobble::new(
                             track.artist.text.clone(),
                             track.name.clone(),
-                            DateTime::from_timestamp(timestamp, 0).unwrap_or_else(|| Utc::now()),
+                            DateTime::from_timestamp(timestamp, 0).unwrap_or_else(Utc::now),
                             "lastfm".to_string(),
                         );
 
@@ -143,7 +148,9 @@ impl LastFmImporter {
 
             // Check if we have more pages
             if let Some(attr) = &data.recenttracks.attr {
-                if let (Ok(current_page), Ok(total_pages)) = (attr.page.parse::<i32>(), attr.total_pages.parse::<i32>()) {
+                if let (Ok(current_page), Ok(total_pages)) =
+                    (attr.page.parse::<i32>(), attr.total_pages.parse::<i32>())
+                {
                     if current_page >= total_pages {
                         break;
                     }

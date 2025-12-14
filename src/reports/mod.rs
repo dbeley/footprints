@@ -16,9 +16,7 @@ pub struct Report {
 }
 
 pub fn generate_yearly_report(pool: &DbPool, year: i32) -> Result<Report> {
-    let start_date = chrono::Utc
-        .with_ymd_and_hms(year, 1, 1, 0, 0, 0)
-        .unwrap();
+    let start_date = chrono::Utc.with_ymd_and_hms(year, 1, 1, 0, 0, 0).unwrap();
     let end_date = chrono::Utc
         .with_ymd_and_hms(year, 12, 31, 23, 59, 59)
         .unwrap();
@@ -30,21 +28,20 @@ pub fn generate_monthly_report(pool: &DbPool, year: i32, month: u32) -> Result<R
     let start_date = chrono::Utc
         .with_ymd_and_hms(year, month, 1, 0, 0, 0)
         .unwrap();
-    
+
     let next_month = if month == 12 {
-        chrono::Utc.with_ymd_and_hms(year + 1, 1, 1, 0, 0, 0).unwrap()
+        chrono::Utc
+            .with_ymd_and_hms(year + 1, 1, 1, 0, 0, 0)
+            .unwrap()
     } else {
-        chrono::Utc.with_ymd_and_hms(year, month + 1, 1, 0, 0, 0).unwrap()
+        chrono::Utc
+            .with_ymd_and_hms(year, month + 1, 1, 0, 0, 0)
+            .unwrap()
     };
-    
+
     let end_date = next_month - Duration::seconds(1);
 
-    generate_report(
-        pool,
-        start_date,
-        end_date,
-        format!("{}-{:02}", year, month),
-    )
+    generate_report(pool, start_date, end_date, format!("{}-{:02}", year, month))
 }
 
 pub fn generate_last_month_report(pool: &DbPool) -> Result<Report> {
@@ -59,9 +56,7 @@ pub fn generate_last_month_report(pool: &DbPool) -> Result<Report> {
 }
 
 pub fn generate_all_time_report(pool: &DbPool) -> Result<Report> {
-    let start_date = chrono::Utc
-        .with_ymd_and_hms(2000, 1, 1, 0, 0, 0)
-        .unwrap();
+    let start_date = chrono::Utc.with_ymd_and_hms(2000, 1, 1, 0, 0, 0).unwrap();
     let end_date = Utc::now();
 
     generate_report(pool, start_date, end_date, "All Time".to_string())

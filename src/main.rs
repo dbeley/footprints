@@ -30,15 +30,14 @@ async fn main() -> Result<()> {
 
     // Create database pool
     let pool = db::create_pool(&db_path)?;
-    
+
     // Initialize database schema
     db::init_database(&pool)?;
 
     tracing::info!("Database initialized successfully");
 
     // Create router
-    let app = api::create_router(pool)
-        .nest_service("/static", ServeDir::new("static"));
+    let app = api::create_router(pool).nest_service("/static", ServeDir::new("static"));
 
     // Get port from environment or use default
     let port = std::env::var("PORT")

@@ -1,0 +1,35 @@
+# Git
+.git
+.gitignore
+
+# Build artifacts
+target/
+*.db
+*.db-shm
+*.db-wal
+
+# Documentation
+README.md
+ARCHITECTURE.md
+CONTRIBUTING.md
+LICENSE
+
+# Environment
+.env
+.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# CI/CD
+.github/
+
+# Docker
+docker-compose.yml
+Dockerfile
+
+# Data
+data/

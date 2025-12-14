@@ -53,7 +53,9 @@ impl ListenBrainzImporter {
         loop {
             tracing::info!(
                 "Fetching ListenBrainz listens{}",
-                max_ts.map(|ts| format!(" before timestamp {}", ts)).unwrap_or_default()
+                max_ts
+                    .map(|ts| format!(" before timestamp {}", ts))
+                    .unwrap_or_default()
             );
 
             let mut url = format!(
@@ -66,7 +68,7 @@ impl ListenBrainzImporter {
             }
 
             let mut request = self.client.get(&url);
-            
+
             if let Some(token) = &self.token {
                 request = request.header("Authorization", format!("Token {}", token));
             }
@@ -96,7 +98,7 @@ impl ListenBrainzImporter {
                 let mut scrobble = Scrobble::new(
                     listen.track_metadata.artist_name.clone(),
                     listen.track_metadata.track_name.clone(),
-                    DateTime::from_timestamp(listen.listened_at, 0).unwrap_or_else(|| Utc::now()),
+                    DateTime::from_timestamp(listen.listened_at, 0).unwrap_or_else(Utc::now),
                     "listenbrainz".to_string(),
                 );
 
