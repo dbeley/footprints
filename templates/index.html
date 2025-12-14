@@ -253,11 +253,11 @@
         </div>
     </div>
 
-    <div class="tabs">
-        <button class="tab active" onclick="switchTab('overview')">Overview</button>
-        <button class="tab" onclick="switchTab('timeline')">Timeline</button>
-        <button class="tab" onclick="switchTab('reports')">Reports</button>
-        <button class="tab" onclick="switchTab('import')">Import</button>
+    <div class="tabs" id="tabButtons">
+        <button class="tab active" data-tab="overview">Overview</button>
+        <button class="tab" data-tab="timeline">Timeline</button>
+        <button class="tab" data-tab="reports">Reports</button>
+        <button class="tab" data-tab="import">Import</button>
     </div>
 
     <div id="overview" class="tab-content active">
@@ -543,8 +543,10 @@
             // Update tab buttons
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
+                if (tab.dataset.tab === tabName) {
+                    tab.classList.add('active');
+                }
             });
-            event.target.classList.add('active');
 
             // Update tab content
             document.querySelectorAll('.tab-content').forEach(content => {
@@ -557,6 +559,15 @@
                 loadTimeline(0);
             }
         }
+
+        // Set up tab click handlers
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    switchTab(this.dataset.tab);
+                });
+            });
+        });
 
         function escapeHtml(text) {
             const div = document.createElement('div');

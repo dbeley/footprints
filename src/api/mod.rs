@@ -140,7 +140,11 @@ async fn get_report_handler(
         "lastmonth" => reports::generate_last_month_report(&state.pool),
         year if year.len() == 4 => {
             if let Ok(y) = year.parse::<i32>() {
-                reports::generate_yearly_report(&state.pool, y)
+                if (1970..=2100).contains(&y) {
+                    reports::generate_yearly_report(&state.pool, y)
+                } else {
+                    return Err(StatusCode::BAD_REQUEST);
+                }
             } else {
                 return Err(StatusCode::BAD_REQUEST);
             }
