@@ -22,7 +22,39 @@ Self-hosted music history manager with stats, reports and charts, inspired by [m
 
 ## Quick Start
 
-### Using Docker Compose (Recommended)
+### Using Nix Flakes (Recommended for NixOS)
+
+```bash
+# Development environment
+nix develop
+
+# Run directly
+nix run
+
+# Build the package
+nix build
+```
+
+**NixOS Configuration:**
+
+Add to your `configuration.nix`:
+
+```nix
+{
+  inputs.footprints.url = "github:dbeley/footprints";
+  
+  # In your configuration
+  services.footprints = {
+    enable = true;
+    port = 3000;
+    openFirewall = true;
+    # Optional: environment file for API keys
+    environmentFile = /run/secrets/footprints-env;
+  };
+}
+```
+
+### Using Docker Compose
 
 ```bash
 docker-compose up -d
@@ -97,6 +129,21 @@ curl -X POST http://localhost:3000/api/import \
 
 ## Development
 
+### Using Nix (Recommended)
+
+```bash
+# Enter development shell with all dependencies
+nix develop
+
+# Pre-commit hooks are automatically installed
+# They will run on git commit
+
+# Manually run pre-commit on all files
+nix flake check
+```
+
+### Traditional Development
+
 ```bash
 # Run in development mode with auto-reload
 cargo watch -x run
@@ -109,6 +156,31 @@ cargo fmt
 
 # Run linter
 cargo clippy
+```
+
+### Pre-commit Hooks
+
+This project uses pre-commit hooks to ensure code quality. With Nix:
+
+```bash
+# Hooks are automatically installed in `nix develop`
+# They run automatically on `git commit`
+
+# Manually run all hooks
+nix flake check
+```
+
+Without Nix, install pre-commit manually:
+
+```bash
+# Install pre-commit (requires Python)
+pip install pre-commit
+
+# Install the hooks
+pre-commit install
+
+# Run manually
+pre-commit run --all-files
 ```
 
 ## Project Structure

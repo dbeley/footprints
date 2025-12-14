@@ -10,6 +10,12 @@ data/
 # Environment
 .env
 
+# Nix
+.direnv/
+.envrc.cache
+result
+result-*
+
 # IDE
 .vscode/
 .idea/
