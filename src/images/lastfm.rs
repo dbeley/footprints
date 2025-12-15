@@ -41,7 +41,10 @@ impl LastFmImageClient {
     pub fn new(api_key: String) -> Self {
         Self {
             api_key,
-            client: reqwest::Client::new(),
+            client: reqwest::Client::builder()
+                .timeout(std::time::Duration::from_secs(5))
+                .build()
+                .unwrap(),
         }
     }
 
@@ -50,6 +53,10 @@ impl LastFmImageClient {
         artist: &str,
         size: ImageSize,
     ) -> Result<Option<String>> {
+        if self.api_key.is_empty() {
+            return Ok(None);
+        }
+
         let url = format!(
             "https://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist={}&api_key={}&format=json",
             urlencoding::encode(artist),
@@ -73,6 +80,10 @@ impl LastFmImageClient {
         album: &str,
         size: ImageSize,
     ) -> Result<Option<String>> {
+        if self.api_key.is_empty() {
+            return Ok(None);
+        }
+
         let url = format!(
             "https://ws.audioscrobbler.com/2.0/?method=album.getinfo&artist={}&album={}&api_key={}&format=json",
             urlencoding::encode(artist),

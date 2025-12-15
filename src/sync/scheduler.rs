@@ -135,9 +135,9 @@ impl SyncScheduler {
 
     /// Sync a specific configuration
     async fn sync_config(&self, config: &crate::models::SyncConfig) -> Result<usize> {
-        let since = config.last_sync_timestamp.unwrap_or_else(|| {
-            Utc::now() - chrono::Duration::hours(DEFAULT_FIRST_SYNC_HOURS)
-        });
+        let since = config
+            .last_sync_timestamp
+            .unwrap_or_else(|| Utc::now() - chrono::Duration::hours(DEFAULT_FIRST_SYNC_HOURS));
 
         match config.source.as_str() {
             "lastfm" => {
