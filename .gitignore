@@ -1,0 +1,28 @@
+# Rust
+/target
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+data/
+
+# Environment
+.env
+
+# Nix
+.direnv/
+.envrc.cache
+result
+result-*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

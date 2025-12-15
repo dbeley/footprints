@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  footprints:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/data
+    environment:
+      - DATABASE_PATH=/data/footprints.db
+      - PORT=3000
+      - RUST_LOG=footprints=info
+      # Last.fm API key for fetching artist/album images
+      # Set this in a .env file or export LASTFM_API_KEY in your shell
+      # Get your key at: https://www.last.fm/api/account/create
+      - LASTFM_API_KEY=${LASTFM_API_KEY}
+    restart: unless-stopped

@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Footprints - Maloja-inspired dashboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg: #0c1016;
+            --panel: #121821;
+            --tile: #0f131b;
+            --border: #1c2330;
+            --muted: #9aa6b7;
+            --text: #e7edf5;
+            --accent: #7dd3fc;
+            --accent-strong: #5fb3ff;
+            --shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Ubuntu', 'Space Mono', system-ui, -apple-system, "Segoe UI", sans-serif;
+            background: radial-gradient(circle at 10% 10%, rgba(57, 115, 172, 0.06), transparent 25%), var(--bg);
+            color: var(--text);
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 26px 18px 60px;
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        header.masthead {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            background: linear-gradient(135deg, rgba(20, 26, 34, 0.9), rgba(12, 16, 22, 0.95));
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            margin-bottom: 18px;
+            gap: 24px;
+        }
+
+        .brand {
+            display: grid;
+            gap: 6px;
+        }
+
+        .brand h1 {
+            font-size: 1.6em;
+            letter-spacing: 0.6px;
+        }
+
+        .brand .eyebrow {
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.75em;
+        }
+
+        .subtitle {
+            color: var(--muted);
+        }
+
+        .pill {
+            background: rgba(125, 211, 252, 0.08);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 14px;
+            text-align: right;
+            min-width: 180px;
+        }
+
+        .pill .label {
+            font-size: 0.85em;
+            color: var(--muted);
+        }
+
+        .pill .value {
+            font-size: 1.2em;
+            font-weight: 700;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: var(--shadow);
+            margin-bottom: 16px;
+        }
+
+        .panel-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .panel-heading h2 {
+            font-size: 1.15em;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: 0.9em;
+        }
+
+        .tabs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 8px;
+            margin: 6px 0 14px;
+        }
+
+        .tab {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: border-color 0.2s ease, background 0.2s ease;
+            font-weight: 600;
+        }
+
+        .tab.active {
+            border-color: var(--accent);
+            background: rgba(125, 211, 252, 0.08);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .controls {
+            display: grid;
+            gap: 12px;
+        }
+
+        .time-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .time-btn {
+            border: 1px solid var(--border);
+            background: var(--tile);
+            color: var(--text);
+            padding: 10px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+        }
+
+        .time-btn.active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.25);
+        }
+
+        .quick-config {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+        }
+
+        .quick-config label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 0.95em;
+        }
+
+        .custom-range {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            align-items: end;
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 10px;
+        }
+
+        input[type="checkbox"],
+        input[type="number"],
+        input[type="text"],
+        select {
+            background: var(--tile);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 9px 10px;
+            font-size: 0.95em;
+        }
+
+        input[type="number"] {
+            width: 90px;
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+            color: #0b1118;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+            box-shadow: 0 10px 25px rgba(125, 211, 252, 0.25);
+            transition: transform 0.1s ease, box-shadow 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 30px rgba(125, 211, 252, 0.35);
+        }
+
+        button.ghost {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+            box-shadow: none;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .stat-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+        }
+
+        .stat-block {
+            background: var(--tile);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .stat-label {
+            color: var(--muted);
+            font-size: 0.9em;
+        }
+
+        .stat-value {
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        .tiles {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            grid-auto-rows: 110px;
+            grid-auto-flow: row;
+            gap: 8px;
+            padding: 6px;
+            background: var(--tile);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .tiles.dense {
+            grid-template-columns: repeat(9, minmax(0, 1fr));
+            grid-auto-rows: 90px;
+            grid-auto-flow: row;
+        }
+
+        .tile {
+            position: relative;
+            background: radial-gradient(circle at 20% 20%, rgba(125, 211, 252, 0.04), rgba(0, 0, 0, 0.35));
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            min-height: 100%;
+        }
+
+        .tile .cover {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: saturate(0.85);
+            opacity: 0.92;
+            transition: opacity 0.2s ease;
+        }
+
+        body[data-artwork="off"] .tile .cover {
+            display: none;
+        }
+
+        .tile .placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text);
+            background: linear-gradient(135deg, rgba(125, 211, 252, 0.12), rgba(95, 179, 255, 0.1));
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .tile .overlay {
+            position: absolute;
+            inset: 0;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            gap: 4px;
+            background: linear-gradient(to top, rgba(6, 9, 13, 0.8), rgba(6, 9, 13, 0.05));
+        }
+
+        .tile .rank-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(12, 16, 22, 0.9);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-weight: 700;
+        }
+
+        .tile .name {
+            font-weight: 700;
+            font-size: 1em;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .tile .details {
+            color: var(--muted);
+            font-size: 0.9em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .tile .count {
+            color: var(--accent);
+            font-size: 0.9em;
+            font-weight: 700;
+        }
+
+        .tile.rank-1 { grid-column: span 3; grid-row: span 3; }
+        .tile.rank-2, .tile.rank-3, .tile.rank-4, .tile.rank-5 { grid-column: span 2; grid-row: span 2; }
+
+        .tiles.dense .tile.rank-1 { grid-column: span 3; grid-row: span 3; }
+        .tiles.dense .tile.rank-2, .tiles.dense .tile.rank-3, .tiles.dense .tile.rank-4, .tiles.dense .tile.rank-5 { grid-column: span 2; grid-row: span 2; }
+
+        .tiles .empty-state,
+        .tiles .loading-state {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--muted);
+        }
+
+        .bar-chart {
+            margin-top: 10px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .bar-row {
+            display: grid;
+            grid-template-columns: 1.2fr 3fr auto;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bar-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--text);
+        }
+
+        .bar {
+            background: var(--tile);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            height: 12px;
+        }
+
+        .bar span {
+            display: block;
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+        }
+
+        .bar-value {
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .pulse-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            height: 180px;
+            padding: 6px 0;
+        }
+
+        .pulse-bar {
+            flex: 1;
+            background: linear-gradient(180deg, rgba(125, 211, 252, 0.2), rgba(95, 179, 255, 0.75));
+            border-radius: 6px 6px 2px 2px;
+            position: relative;
+            min-height: 6px;
+            border: 1px solid rgba(125, 211, 252, 0.25);
+        }
+
+        .pulse-bar span {
+            position: absolute;
+            top: -18px;
+            font-size: 10px;
+            color: var(--muted);
+            display: none;
+        }
+
+        .pulse-chart:hover .pulse-bar span {
+            display: block;
+        }
+
+        .top-list {
+            list-style: none;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .top-list li {
+            display: grid;
+            grid-template-columns: 60px 1fr auto;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .top-list li:last-child {
+            border-bottom: none;
+        }
+
+        .rank {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            background: var(--tile);
+        }
+
+        .item-info .item-name {
+            font-weight: 700;
+        }
+
+        .item-info .item-details {
+            color: var(--muted);
+            font-size: 0.9em;
+        }
+
+        .count-badge {
+            background: rgba(125, 211, 252, 0.1);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-weight: 700;
+        }
+
+        .timeline-item {
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            background: var(--tile);
+        }
+
+        .timestamp {
+            color: var(--muted);
+            font-size: 0.85em;
+        }
+
+        .track-name {
+            font-weight: 700;
+            margin: 4px 0;
+        }
+
+        .loading,
+        .error,
+        .success {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 6px 0;
+        }
+
+        .loading {
+            background: rgba(125, 211, 252, 0.08);
+            color: var(--text);
+        }
+
+        .error {
+            background: rgba(220, 38, 38, 0.15);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+        }
+
+        .success {
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.32);
+        }
+
+        .inline-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .small-label {
+            color: var(--muted);
+            font-size: 0.85em;
+        }
+
+        @media (max-width: 900px) {
+            .tiles {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                grid-auto-rows: 120px;
+            }
+            .tiles.dense {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+            .tile.rank-1 { grid-column: span 3; grid-row: span 3; }
+            .tile.rank-2, .tile.rank-3, .tile.rank-4, .tile.rank-5 { grid-column: span 2; grid-row: span 2; }
+        }
+    </style>
+</head>
+<body data-artwork="on" data-layout="wide">
+    <header class="masthead">
+        <div class="brand">
+            <div class="eyebrow">Footprints</div>
+            <h1>Maloja-inspired listening control room</h1>
+            <p class="subtitle">Utilitarian grids and charts you can poke at.</p>
+        </div>
+        <div class="pill">
+            <div class="label">Active period</div>
+            <div class="value" id="activePeriodLabel">All Time</div>
+        </div>
+    </header>
+
+    <div class="tabs" id="tabButtons">
+        <button class="tab active" data-tab="overview">Overview</button>
+        <button class="tab" data-tab="timeline">Timeline</button>
+        <button class="tab" data-tab="import">Import</button>
+    </div>
+
+    <div class="panel">
+        <div class="controls">
+            <div class="time-selector">
+                <button class="time-btn active" data-period="alltime">All Time</button>
+                <button class="time-btn" data-period="year">This Year</button>
+                <button class="time-btn" data-period="month">This Month</button>
+                <button class="time-btn" data-period="week">This Week</button>
+                <button class="time-btn" data-period="today">Today</button>
+                <button class="time-btn" data-period="custom">Custom…</button>
+            </div>
+            <div class="custom-range" id="customRange" style="display:none;">
+                <label>Start <input type="date" id="customStart"></label>
+                <label>End <input type="date" id="customEnd"></label>
+                <button class="ghost" onclick="applyCustomRange()">Apply custom range</button>
+                <div id="customRangeMessage" class="muted"></div>
+            </div>
+            <div class="stat-row">
+                <div class="stat-block">
+                    <div class="stat-label">Total scrobbles</div>
+                    <div class="stat-value" id="totalScrobbles">-</div>
+                </div>
+                <div class="stat-block">
+                    <div class="stat-label">Scrobbles in view</div>
+                    <div class="stat-value" id="periodScrobbles">-</div>
+                </div>
+                <div class="stat-block">
+                    <div class="stat-label">Tile limit</div>
+                    <div class="stat-value" id="tileCountValue">14</div>
+                </div>
+            </div>
+            <div class="quick-config">
+                <label><input type="checkbox" id="artworkToggle" checked> Show artwork</label>
+                <label><input type="checkbox" id="denseToggle"> Dense grid</label>
+                <label>Tile cap <input type="number" id="tileCap" min="6" max="30" value="14"></label>
+            </div>
+        </div>
+    </div>
+
+    <div id="overview" class="tab-content active">
+        <div class="panel">
+            <div class="panel-heading">
+                <h2>Top Artists</h2>
+                <span class="muted">Based on selected period</span>
+            </div>
+            <div class="tiles" id="topArtistsTiles">
+                <div class="loading-state">Loading tiles...</div>
+            </div>
+            <div class="bar-chart" id="artistsBar"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-heading">
+                <h2>Top Albums</h2>
+                <span class="muted">Compact grid, utilitarian overlay</span>
+            </div>
+            <div class="tiles" id="topAlbumsTiles">
+                <div class="loading-state">Loading tiles...</div>
+            </div>
+            <div class="bar-chart" id="albumsBar"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-heading">
+                <h2>Top Tracks</h2>
+                <span class="muted">Artist + track, Maloja-style</span>
+            </div>
+            <div class="tiles" id="topTracksTiles">
+                <div class="loading-state">Loading tiles...</div>
+            </div>
+            <div class="bar-chart" id="tracksBar"></div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-heading">
+                <h2>Listening pulse</h2>
+                <span class="muted" id="pulseRangeLabel">Loading range…</span>
+            </div>
+            <div class="pulse-chart" id="pulseChart">
+                <div class="loading-state">Loading pulse…</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="timeline" class="tab-content">
+        <div class="panel">
+            <div class="panel-heading">
+                <h2>Recent scrobbles</h2>
+                <span class="muted">Latest 50 per page</span>
+            </div>
+            <div id="timelineList">
+                <div class="loading">Loading...</div>
+            </div>
+            <div class="inline-actions">
+                <button class="ghost" onclick="loadMore()">Load more</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="import" class="tab-content">
+        <div class="panel">
+            <div class="panel-heading">
+                <h2>Import data</h2>
+                <span class="muted">Pull from Last.fm or ListenBrainz</span>
+            </div>
+            <div id="importMessage"></div>
+            <h3>Last.fm</h3>
+            <div class="report-grid">
+                <input type="text" id="lastfmUsername" placeholder="Last.fm username">
+                <input type="text" id="lastfmApiKey" placeholder="Last.fm API key">
+                <button onclick="importLastFm()" id="lastfmBtn">Import from Last.fm</button>
+            </div>
+            <h3>ListenBrainz</h3>
+            <div class="report-grid">
+                <input type="text" id="lbUsername" placeholder="ListenBrainz username">
+                <input type="text" id="lbToken" placeholder="ListenBrainz token (optional)">
+                <button onclick="importListenBrainz()" id="lbBtn">Import from ListenBrainz</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            currentOffset: 0,
+            limit: 50,
+            currentPeriod: 'alltime',
+            customRange: null,
+            prefs: loadPreferences(),
+        };
+
+        function loadPreferences() {
+            const tileCap = parseInt(localStorage.getItem('fp_tile_cap') || '14', 10);
+            return {
+                showArtwork: localStorage.getItem('fp_show_artwork') !== 'false',
+                denseGrid: localStorage.getItem('fp_dense_grid') === 'true',
+                tileCap: Number.isNaN(tileCap) ? 14 : tileCap,
+            };
+        }
+
+        function persistPreferences() {
+            localStorage.setItem('fp_show_artwork', state.prefs.showArtwork);
+            localStorage.setItem('fp_dense_grid', state.prefs.denseGrid);
+            localStorage.setItem('fp_tile_cap', state.prefs.tileCap);
+        }
+
+        function applyPreferences() {
+            document.body.dataset.artwork = state.prefs.showArtwork ? 'on' : 'off';
+            document.body.dataset.layout = state.prefs.denseGrid ? 'dense' : 'wide';
+            document.getElementById('artworkToggle').checked = state.prefs.showArtwork;
+            document.getElementById('denseToggle').checked = state.prefs.denseGrid;
+            document.getElementById('tileCap').value = state.prefs.tileCap;
+            document.getElementById('tileCountValue').textContent = state.prefs.tileCap;
+            document.querySelectorAll('.tiles').forEach(container => {
+                container.classList.toggle('dense', state.prefs.denseGrid);
+            });
+        }
+
+        function periodLabel(period) {
+            switch (period) {
+                case 'today': return 'Today';
+                case 'week': return 'This Week';
+                case 'month': return 'This Month';
+                case 'year': return 'This Year';
+                default: return 'All Time';
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                document.getElementById('totalScrobbles').textContent = data.total_scrobbles.toLocaleString();
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function loadStatsUI(period, range) {
+            try {
+                const params = new URLSearchParams({ period });
+                if (range && range.start && range.end) {
+                    params.set('start', range.start);
+                    params.set('end', range.end);
+                }
+
+                const response = await fetch(`/api/stats/ui?${params.toString()}`);
+                const data = await response.json();
+
+                state.lastArtists = data.top_artists;
+                state.lastTracks = data.top_tracks;
+                state.lastAlbums = data.top_albums;
+
+                const label = period === 'custom' && range
+                    ? formatCustomLabel(range)
+                    : periodLabel(period);
+
+                document.getElementById('activePeriodLabel').textContent = label;
+                document.getElementById('periodScrobbles').textContent = data.period_scrobbles.toLocaleString();
+
+                renderTiles('topArtistsTiles', data.top_artists, 'artist');
+                renderTiles('topTracksTiles', data.top_tracks, 'track');
+                renderTiles('topAlbumsTiles', data.top_albums, 'album');
+
+                renderBarChart('artistsBar', data.top_artists, item => item.name);
+                renderBarChart('albumsBar', data.top_albums, item => `${item.artist} — ${item.album}`);
+                renderBarChart('tracksBar', data.top_tracks, item => `${item.artist} — ${item.track}`);
+
+                loadPulse(period, range);
+            } catch (error) {
+                console.error('Error loading UI stats:', error);
+            }
+        }
+
+        function renderTiles(containerId, items, type) {
+            const container = document.getElementById(containerId);
+
+            if (!items || items.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="muted">No scrobbles in this period.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const limit = Math.max(6, Math.min(state.prefs.tileCap, 30));
+            const tiles = items.slice(0, limit).map((item, idx) => {
+                const rank = idx + 1;
+                let name, details, count, imageUrl;
+
+                if (type === 'artist') {
+                    name = item.name;
+                    count = item.count;
+                    imageUrl = item.image_url;
+                } else if (type === 'track') {
+                    name = item.track;
+                    details = item.artist;
+                    count = item.count;
+                    imageUrl = item.image_url;
+                } else {
+                    name = item.album;
+                    details = item.artist;
+                    count = item.count;
+                    imageUrl = item.image_url;
+                }
+
+                const placeholder = !state.prefs.showArtwork || !imageUrl ? `<div class="placeholder">${getInitials(name)}</div>` : '';
+                const cover = imageUrl ? `<img class="cover" src="${escapeHtml(imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : '';
+
+                return `
+                    <article class="tile rank-${rank}">
+                        ${cover}
+                        ${placeholder}
+                        <div class="overlay">
+                            <span class="rank-badge">#${rank}</span>
+                            <div class="name">${escapeHtml(name)}</div>
+                            ${details ? `<div class="details">${escapeHtml(details)}</div>` : ''}
+                            <div class="count">${count.toLocaleString()} plays</div>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+
+            container.innerHTML = tiles;
+            container.classList.toggle('dense', state.prefs.denseGrid);
+        }
+
+        function renderBarChart(containerId, items, labelBuilder) {
+            const container = document.getElementById(containerId);
+
+            if (!items || items.length === 0) {
+                container.innerHTML = `<div class="muted">Nothing to chart here.</div>`;
+                return;
+            }
+
+            const rows = items.slice(0, 10).map(item => ({ label: labelBuilder(item), value: item.count }));
+            const max = Math.max(...rows.map(r => r.value));
+
+            container.innerHTML = rows.map(row => {
+                const width = max ? (row.value / max) * 100 : 0;
+                return `
+                    <div class="bar-row">
+                        <span class="bar-label">${escapeHtml(row.label)}</span>
+                        <div class="bar"><span style="width:${width}%"></span></div>
+                        <span class="bar-value">${row.value.toLocaleString()}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadPulse(period, range) {
+            const pulseChart = document.getElementById('pulseChart');
+            pulseChart.innerHTML = '<div class="loading-state">Loading pulse…</div>';
+            const label = period === 'custom' && range
+                ? formatCustomLabel(range)
+                : periodLabel(period);
+            document.getElementById('pulseRangeLabel').textContent = `${label} view`;
+
+            const params = new URLSearchParams({ period });
+            if (range && range.start && range.end) {
+                params.set('start', range.start);
+                params.set('end', range.end);
+            }
+
+            try {
+                const response = await fetch(`/api/pulse?${params.toString()}`);
+                const data = await response.json();
+                renderPulseChart(data);
+            } catch (error) {
+                pulseChart.innerHTML = '<div class="muted">Unable to load pulse.</div>';
+                console.error('Error loading pulse:', error);
+            }
+        }
+
+        function renderPulseChart(points) {
+            const chart = document.getElementById('pulseChart');
+
+            if (!points || points.length === 0) {
+                chart.innerHTML = '<div class="muted">No scrobbles to plot.</div>';
+                return;
+            }
+
+            const max = Math.max(...points.map(p => p.count));
+            const trimmed = points.slice(-90); // keep it readable
+
+            chart.innerHTML = trimmed.map(point => {
+                const height = max ? Math.max(6, Math.round((point.count / max) * 100)) : 0;
+                return `<div class="pulse-bar" style="height:${height}%;" title="${point.day}: ${point.count} plays"><span>${point.count}</span></div>`;
+            }).join('');
+        }
+
+        async function loadTimeline(offset = 0) {
+            try {
+                const response = await fetch(`/api/timeline?limit=${state.limit}&offset=${offset}`);
+                const data = await response.json();
+
+                const timeline = document.getElementById('timelineList');
+                if (offset === 0) {
+                    timeline.innerHTML = '';
+                }
+
+                if (data.length === 0) {
+                    timeline.innerHTML += '<div class="loading">No more scrobbles</div>';
+                    return;
+                }
+
+                data.forEach(scrobble => {
+                    const date = new Date(scrobble.timestamp);
+                    const item = document.createElement('div');
+                    item.className = 'timeline-item';
+                    item.innerHTML = `
+                        <div class="timestamp">${date.toLocaleString()}</div>
+                        <div class="track-name">${escapeHtml(scrobble.track)}</div>
+                        <div class="item-details">
+                            ${escapeHtml(scrobble.artist)}
+                            ${scrobble.album ? ' • ' + escapeHtml(scrobble.album) : ''}
+                        </div>
+                    `;
+                    timeline.appendChild(item);
+                });
+
+                state.currentOffset = offset;
+            } catch (error) {
+                console.error('Error loading timeline:', error);
+            }
+        }
+
+        function loadMore() {
+            loadTimeline(state.currentOffset + state.limit);
+        }
+
+        async function importLastFm() {
+            const username = document.getElementById('lastfmUsername').value;
+            const apiKey = document.getElementById('lastfmApiKey').value;
+            const messageDiv = document.getElementById('importMessage');
+            const btn = document.getElementById('lastfmBtn');
+
+            if (!username || !apiKey) {
+                messageDiv.innerHTML = '<div class="error">Please provide both username and API key</div>';
+                return;
+            }
+
+            btn.disabled = true;
+            messageDiv.innerHTML = '<div class="loading">Importing from Last.fm...</div>';
+
+            try {
+                const response = await fetch('/api/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        source: 'lastfm',
+                        username,
+                        api_key: apiKey
+                    })
+                });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        messageDiv.innerHTML = `<div class="success">${result.message}</div>`;
+                        loadStats();
+                        loadStatsUI(state.currentPeriod, state.customRange);
+                    } else {
+                        messageDiv.innerHTML = `<div class="error">${result.message}</div>`;
+                    }
+            } catch (error) {
+                messageDiv.innerHTML = '<div class="error">Import failed</div>';
+                console.error('Error:', error);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function importListenBrainz() {
+            const username = document.getElementById('lbUsername').value;
+            const token = document.getElementById('lbToken').value;
+            const messageDiv = document.getElementById('importMessage');
+            const btn = document.getElementById('lbBtn');
+
+            if (!username) {
+                messageDiv.innerHTML = '<div class="error">Please provide username</div>';
+                return;
+            }
+
+            btn.disabled = true;
+            messageDiv.innerHTML = '<div class="loading">Importing from ListenBrainz...</div>';
+
+            try {
+                const response = await fetch('/api/import', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        source: 'listenbrainz',
+                        username,
+                        token: token || null
+                    })
+                });
+
+                    const result = await response.json();
+                    if (result.success) {
+                        messageDiv.innerHTML = `<div class="success">${result.message}</div>`;
+                        loadStats();
+                        loadStatsUI(state.currentPeriod, state.customRange);
+                    } else {
+                        messageDiv.innerHTML = `<div class="error">${result.message}</div>`;
+                    }
+            } catch (error) {
+                messageDiv.innerHTML = '<div class="error">Import failed</div>';
+                console.error('Error:', error);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.tab === tabName);
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === tabName);
+            });
+
+            if (tabName === 'timeline' && state.currentOffset === 0) {
+                loadTimeline(0);
+            }
+        }
+
+        function getInitials(name) {
+            return name
+                .split(' ')
+                .map(word => word[0])
+                .filter(Boolean)
+                .slice(0, 2)
+                .join('')
+                .toUpperCase();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text ?? '';
+            return div.innerHTML;
+        }
+
+        function formatCustomLabel(range) {
+            const start = new Date(range.start);
+            const end = new Date(range.end);
+            return `${start.toLocaleDateString()} – ${end.toLocaleDateString()}`;
+        }
+
+        function applyCustomRange() {
+            const startInput = document.getElementById('customStart').value;
+            const endInput = document.getElementById('customEnd').value;
+            const message = document.getElementById('customRangeMessage');
+
+            if (!startInput || !endInput) {
+                message.textContent = 'Select both start and end dates';
+                return;
+            }
+
+            const startIso = new Date(`${startInput}T00:00:00Z`).toISOString();
+            const endIso = new Date(`${endInput}T23:59:59Z`).toISOString();
+
+            state.customRange = { start: startIso, end: endIso };
+            state.currentPeriod = 'custom';
+            document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+            const customBtn = document.querySelector('.time-btn[data-period="custom"]');
+            if (customBtn) customBtn.classList.add('active');
+            message.textContent = `Using ${formatCustomLabel(state.customRange)}`;
+            loadStatsUI('custom', state.customRange);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    switchTab(this.dataset.tab);
+                });
+            });
+
+            document.querySelectorAll('.time-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+
+                    state.currentPeriod = this.dataset.period;
+
+                    const customRangeEl = document.getElementById('customRange');
+                    if (state.currentPeriod === 'custom') {
+                        customRangeEl.style.display = 'grid';
+                        document.getElementById('customRangeMessage').textContent = 'Pick a start and end date, then apply.';
+                    } else {
+                        customRangeEl.style.display = 'none';
+                        state.customRange = null;
+                        loadStatsUI(state.currentPeriod, state.customRange);
+                    }
+                });
+            });
+
+            const today = new Date();
+            const monthAgo = new Date();
+            monthAgo.setDate(today.getDate() - 30);
+            document.getElementById('customEnd').value = today.toISOString().slice(0, 10);
+            document.getElementById('customStart').value = monthAgo.toISOString().slice(0, 10);
+
+            document.getElementById('artworkToggle').addEventListener('change', (e) => {
+                state.prefs.showArtwork = e.target.checked;
+                persistPreferences();
+                applyPreferences();
+                renderTiles('topArtistsTiles', state.lastArtists || [], 'artist');
+                renderTiles('topTracksTiles', state.lastTracks || [], 'track');
+                renderTiles('topAlbumsTiles', state.lastAlbums || [], 'album');
+            });
+
+            document.getElementById('denseToggle').addEventListener('change', (e) => {
+                state.prefs.denseGrid = e.target.checked;
+                persistPreferences();
+                applyPreferences();
+            });
+
+            document.getElementById('tileCap').addEventListener('change', (e) => {
+                const value = parseInt(e.target.value, 10);
+                if (!Number.isNaN(value)) {
+                    state.prefs.tileCap = Math.max(6, Math.min(value, 30));
+                    persistPreferences();
+                    applyPreferences();
+                    loadStatsUI(state.currentPeriod, state.customRange);
+                }
+            });
+
+            applyPreferences();
+            loadStats();
+            loadStatsUI(state.currentPeriod, state.customRange);
+        });
+    </script>
+</body>
+</html>
