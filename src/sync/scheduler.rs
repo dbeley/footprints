@@ -7,6 +7,10 @@ use tokio::sync::RwLock;
 use crate::db::DbPool;
 use crate::importers::{LastFmImporter, ListenBrainzImporter};
 
+// Configurable constants for sync behavior
+const SYNC_CHECK_INTERVAL_SECS: u64 = 60; // Check for due syncs every minute
+const DEFAULT_FIRST_SYNC_HOURS: i64 = 24; // On first sync, fetch last 24 hours
+
 #[derive(Clone)]
 pub struct SyncScheduler {
     pool: DbPool,
@@ -55,7 +59,7 @@ impl SyncScheduler {
 
     /// Main sync loop
     async fn run_loop(&self) {
-        let check_interval = Duration::from_secs(60); // Check every minute
+        let check_interval = Duration::from_secs(SYNC_CHECK_INTERVAL_SECS);
 
         loop {
             // Check if we should stop
@@ -131,9 +135,9 @@ impl SyncScheduler {
 
     /// Sync a specific configuration
     async fn sync_config(&self, config: &crate::models::SyncConfig) -> Result<usize> {
-        let since = config
-            .last_sync_timestamp
-            .unwrap_or_else(|| Utc::now() - chrono::Duration::hours(24)); // Default to last 24 hours for first sync
+        let since = config.last_sync_timestamp.unwrap_or_else(|| {
+            Utc::now() - chrono::Duration::hours(DEFAULT_FIRST_SYNC_HOURS)
+        });
 
         match config.source.as_str() {
             "lastfm" => {

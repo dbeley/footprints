@@ -217,7 +217,8 @@ impl LastFmImporter {
 
                 if let Some(date_info) = &track.date {
                     if let Ok(timestamp) = date_info.uts.parse::<i64>() {
-                        // Skip tracks older than our "since" timestamp
+                        // Skip tracks older than or equal to our "since" timestamp
+                        // We use <= because we want only NEW scrobbles after the last sync
                         if timestamp <= since_timestamp {
                             continue;
                         }

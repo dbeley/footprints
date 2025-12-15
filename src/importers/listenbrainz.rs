@@ -187,7 +187,8 @@ impl ListenBrainzImporter {
             }
 
             for listen in &data.payload.listens {
-                // Skip listens older than our "since" timestamp
+                // Skip listens at or before our "since" timestamp to avoid duplicates
+                // Using <= ensures we don't re-import the exact timestamp from last sync
                 if listen.listened_at <= since_timestamp {
                     continue;
                 }
