@@ -14,6 +14,8 @@ use crate::images::{ImageRequest, ImageService};
 use crate::importers::{LastFmImporter, ListenBrainzImporter};
 use crate::reports;
 
+type DateRange = (Option<DateTime<Utc>>, Option<DateTime<Utc>>);
+
 #[derive(Clone)]
 pub struct AppState {
     pub pool: DbPool,
@@ -44,7 +46,10 @@ pub struct ImportResponse {
 }
 
 pub fn create_router(pool: DbPool, image_service: Arc<ImageService>) -> Router {
-    let state = AppState { pool, image_service };
+    let state = AppState {
+        pool,
+        image_service,
+    };
 
     Router::new()
         .route("/", get(root_handler))
@@ -247,7 +252,8 @@ async fn get_stats_ui_handler(
         "year" => get_year_range(),
         "custom" => parse_custom_range(params.start.as_deref(), params.end.as_deref())
             .ok_or(StatusCode::BAD_REQUEST)?,
-        "alltime" | _ => (None, None),
+        "alltime" => (None, None),
+        _ => (None, None),
     };
 
     // Fetch stats from database
@@ -362,7 +368,8 @@ async fn get_pulse_handler(
         "year" => get_year_range(),
         "custom" => parse_custom_range(params.start.as_deref(), params.end.as_deref())
             .ok_or(StatusCode::BAD_REQUEST)?,
-        "alltime" | _ => (None, None),
+        "alltime" => (None, None),
+        _ => (None, None),
     };
 
     let data = crate::db::get_scrobbles_per_day(&state.pool, start_date, end_date)
@@ -375,7 +382,7 @@ async fn get_pulse_handler(
     ))
 }
 
-fn get_today_range() -> (Option<DateTime<Utc>>, Option<DateTime<Utc>>) {
+fn get_today_range() -> DateRange {
     let now = Utc::now();
     let today_start = now
         .date_naive()
@@ -384,13 +391,13 @@ fn get_today_range() -> (Option<DateTime<Utc>>, Option<DateTime<Utc>>) {
     (today_start, Some(now))
 }
 
-fn get_week_range() -> (Option<DateTime<Utc>>, Option<DateTime<Utc>>) {
+fn get_week_range() -> DateRange {
     let now = Utc::now();
     let week_ago = now - Duration::days(7);
     (Some(week_ago), Some(now))
 }
 
-fn get_month_range() -> (Option<DateTime<Utc>>, Option<DateTime<Utc>>) {
+fn get_month_range() -> DateRange {
     let now = Utc::now();
     let month_start = now
         .date_naive()
@@ -400,7 +407,7 @@ fn get_month_range() -> (Option<DateTime<Utc>>, Option<DateTime<Utc>>) {
     (month_start, Some(now))
 }
 
-fn get_year_range() -> (Option<DateTime<Utc>>, Option<DateTime<Utc>>) {
+fn get_year_range() -> DateRange {
     let now = Utc::now();
     let year_start = now
         .date_naive()
@@ -411,10 +418,7 @@ fn get_year_range() -> (Option<DateTime<Utc>>, Option<DateTime<Utc>>) {
     (year_start, Some(now))
 }
 
-fn parse_custom_range(
-    start: Option<&str>,
-    end: Option<&str>,
-) -> Option<(Option<DateTime<Utc>>, Option<DateTime<Utc>>)> {
+fn parse_custom_range(start: Option<&str>, end: Option<&str>) -> Option<DateRange> {
     let start_dt = start
         .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
         .map(|dt| dt.with_timezone(&Utc));

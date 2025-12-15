@@ -166,7 +166,7 @@ pub fn get_top_artists(
 
     if let (Some(start), Some(end)) = (start_date, end_date) {
         let mut stmt = conn.prepare(
-            "SELECT artist, COUNT(*) as count FROM scrobbles 
+            "SELECT artist, COUNT(*) as count FROM scrobbles
              WHERE timestamp >= ?1 AND timestamp <= ?2
              GROUP BY artist ORDER BY count DESC LIMIT ?3",
         )?;
@@ -178,7 +178,7 @@ pub fn get_top_artists(
         Ok(artists)
     } else {
         let mut stmt = conn.prepare(
-            "SELECT artist, COUNT(*) as count FROM scrobbles 
+            "SELECT artist, COUNT(*) as count FROM scrobbles
              GROUP BY artist ORDER BY count DESC LIMIT ?1",
         )?;
         let artists_iter = stmt.query_map(params![limit], |row| Ok((row.get(0)?, row.get(1)?)))?;
@@ -197,7 +197,7 @@ pub fn get_top_tracks(
 
     if let (Some(start), Some(end)) = (start_date, end_date) {
         let mut stmt = conn.prepare(
-            "SELECT artist, track, COUNT(*) as count FROM scrobbles 
+            "SELECT artist, track, COUNT(*) as count FROM scrobbles
              WHERE timestamp >= ?1 AND timestamp <= ?2
              GROUP BY artist, track ORDER BY count DESC LIMIT ?3",
         )?;
@@ -209,7 +209,7 @@ pub fn get_top_tracks(
         Ok(tracks)
     } else {
         let mut stmt = conn.prepare(
-            "SELECT artist, track, COUNT(*) as count FROM scrobbles 
+            "SELECT artist, track, COUNT(*) as count FROM scrobbles
              GROUP BY artist, track ORDER BY count DESC LIMIT ?1",
         )?;
         let tracks_iter = stmt.query_map(params![limit], |row| {
@@ -230,7 +230,7 @@ pub fn get_top_albums(
 
     if let (Some(start), Some(end)) = (start_date, end_date) {
         let mut stmt = conn.prepare(
-            "SELECT artist, album, COUNT(*) as count FROM scrobbles 
+            "SELECT artist, album, COUNT(*) as count FROM scrobbles
              WHERE album IS NOT NULL AND timestamp >= ?1 AND timestamp <= ?2
              GROUP BY artist, album ORDER BY count DESC LIMIT ?3",
         )?;
@@ -242,7 +242,7 @@ pub fn get_top_albums(
         Ok(albums)
     } else {
         let mut stmt = conn.prepare(
-            "SELECT artist, album, COUNT(*) as count FROM scrobbles 
+            "SELECT artist, album, COUNT(*) as count FROM scrobbles
              WHERE album IS NOT NULL
              GROUP BY artist, album ORDER BY count DESC LIMIT ?1",
         )?;

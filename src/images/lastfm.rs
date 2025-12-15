@@ -4,12 +4,6 @@ use serde::Deserialize;
 use super::types::ImageSize;
 
 #[derive(Debug, Deserialize)]
-struct LastFmResponse<T> {
-    #[serde(flatten)]
-    data: T,
-}
-
-#[derive(Debug, Deserialize)]
 struct ArtistInfo {
     artist: Artist,
 }

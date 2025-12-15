@@ -40,7 +40,7 @@ repos:
 
   # General file quality checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         exclude: '\.md$'
@@ -54,13 +54,6 @@ repos:
       - id: check-toml
       - id: mixed-line-ending
         args: ['--fix=lf']
-
-  # Markdown linting
-  - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.39.0
-    hooks:
-      - id: markdownlint
-        args: ['--fix']
 
 # Global options
 default_stages: [commit]

@@ -6,9 +6,9 @@ use anyhow::Result;
 
 use crate::db::DbPool;
 
-pub use types::{EntityType, ImageRequest};
 use cache::ImageCache;
 use lastfm::LastFmImageClient;
+pub use types::{EntityType, ImageRequest};
 
 pub struct ImageService {
     cache: ImageCache,
@@ -33,13 +33,12 @@ impl ImageService {
 
         // 2. Fetch from Last.fm
         let url = match request.entity_type {
-            EntityType::Artist => {
-                self.lastfm_client
-                    .fetch_artist_image(&request.artist_name, request.size)
-                    .await
-                    .ok()
-                    .flatten()
-            }
+            EntityType::Artist => self
+                .lastfm_client
+                .fetch_artist_image(&request.artist_name, request.size)
+                .await
+                .ok()
+                .flatten(),
             EntityType::Album => {
                 if let Some(album_name) = &request.album_name {
                     self.lastfm_client
