@@ -68,13 +68,13 @@ pub fn create_router(
         .route("/api/import", post(import_handler))
         .route("/api/sync/config", post(create_sync_config_handler))
         .route("/api/sync/config", get(get_sync_configs_handler))
-        .route("/api/sync/config/:id", get(get_sync_config_handler))
-        .route("/api/sync/config/:id", post(update_sync_config_handler))
-        .route("/api/sync/config/:id/trigger", post(trigger_sync_handler))
         .route(
             "/api/sync/config/:id",
-            axum::routing::delete(delete_sync_config_handler),
+            get(get_sync_config_handler)
+                .post(update_sync_config_handler)
+                .delete(delete_sync_config_handler),
         )
+        .route("/api/sync/config/:id/trigger", post(trigger_sync_handler))
         .route("/api/reports/:type", get(get_report_handler))
         .route("/api/reports/monthly", get(get_monthly_report_handler))
         .route("/api/timeline", get(get_timeline_handler))

@@ -141,12 +141,21 @@ pub fn get_scrobbles(
 
     let scrobbles = stmt
         .query_map(params![limit, offset], |row| {
+            let timestamp_value: i64 = row.get(4)?;
+            let timestamp = DateTime::from_timestamp(timestamp_value, 0).unwrap_or_else(|| {
+                tracing::warn!(
+                    "Invalid timestamp {} in database for scrobble id {:?}, using current time",
+                    timestamp_value,
+                    row.get::<_, i64>(0).ok()
+                );
+                Utc::now()
+            });
             Ok(Scrobble {
                 id: Some(row.get(0)?),
                 artist: row.get(1)?,
                 album: row.get(2)?,
                 track: row.get(3)?,
-                timestamp: DateTime::from_timestamp(row.get(4)?, 0).unwrap_or_else(Utc::now),
+                timestamp,
                 source: row.get(5)?,
                 source_id: row.get(6)?,
             })
@@ -346,6 +355,19 @@ pub fn get_album_for_track(pool: &DbPool, artist: &str, track: &str) -> Result<O
     }
 }
 
+// Helper function to safely convert database timestamps
+fn parse_timestamp_with_warning(ts: i64, field_name: &str, id: i64) -> DateTime<Utc> {
+    DateTime::from_timestamp(ts, 0).unwrap_or_else(|| {
+        tracing::warn!(
+            "Invalid {} timestamp {} in sync_config id {}, using current time",
+            field_name,
+            ts,
+            id
+        );
+        Utc::now()
+    })
+}
+
 // Sync configuration database operations
 pub fn insert_sync_config(pool: &DbPool, config: &SyncConfig) -> Result<i64> {
     let conn = pool.get()?;
@@ -384,19 +406,31 @@ pub fn get_sync_config(pool: &DbPool, id: i64) -> Result<Option<SyncConfig>> {
 
     let mut rows = stmt.query(params![id])?;
     if let Some(row) = rows.next()? {
+        let config_id: i64 = row.get(0)?;
+        let created_ts: i64 = row.get(8)?;
+        let updated_ts: i64 = row.get(9)?;
+        let last_sync_ts: Option<i64> = row.get(6)?;
+
         Ok(Some(SyncConfig {
-            id: Some(row.get(0)?),
+            id: Some(config_id),
             source: row.get(1)?,
             username: row.get(2)?,
             api_key: row.get(3)?,
             token: row.get(4)?,
             sync_interval_minutes: row.get(5)?,
-            last_sync_timestamp: row
-                .get::<_, Option<i64>>(6)?
-                .map(|ts| DateTime::from_timestamp(ts, 0).unwrap_or_else(Utc::now)),
+            last_sync_timestamp: last_sync_ts.and_then(|ts| {
+                DateTime::from_timestamp(ts, 0).or_else(|| {
+                    tracing::warn!(
+                        "Invalid last_sync_timestamp {} in sync_config id {}",
+                        ts,
+                        config_id
+                    );
+                    None
+                })
+            }),
             enabled: row.get::<_, i32>(7)? != 0,
-            created_at: DateTime::from_timestamp(row.get(8)?, 0).unwrap_or_else(Utc::now),
-            updated_at: DateTime::from_timestamp(row.get(9)?, 0).unwrap_or_else(Utc::now),
+            created_at: parse_timestamp_with_warning(created_ts, "created_at", config_id),
+            updated_at: parse_timestamp_with_warning(updated_ts, "updated_at", config_id),
         }))
     } else {
         Ok(None)
@@ -412,19 +446,31 @@ pub fn get_all_sync_configs(pool: &DbPool) -> Result<Vec<SyncConfig>> {
 
     let configs = stmt
         .query_map([], |row| {
+            let config_id: i64 = row.get(0)?;
+            let created_ts: i64 = row.get(8)?;
+            let updated_ts: i64 = row.get(9)?;
+            let last_sync_ts: Option<i64> = row.get(6)?;
+
             Ok(SyncConfig {
-                id: Some(row.get(0)?),
+                id: Some(config_id),
                 source: row.get(1)?,
                 username: row.get(2)?,
                 api_key: row.get(3)?,
                 token: row.get(4)?,
                 sync_interval_minutes: row.get(5)?,
-                last_sync_timestamp: row
-                    .get::<_, Option<i64>>(6)?
-                    .map(|ts| DateTime::from_timestamp(ts, 0).unwrap_or_else(Utc::now)),
+                last_sync_timestamp: last_sync_ts.and_then(|ts| {
+                    DateTime::from_timestamp(ts, 0).or_else(|| {
+                        tracing::warn!(
+                            "Invalid last_sync_timestamp {} in sync_config id {}",
+                            ts,
+                            config_id
+                        );
+                        None
+                    })
+                }),
                 enabled: row.get::<_, i32>(7)? != 0,
-                created_at: DateTime::from_timestamp(row.get(8)?, 0).unwrap_or_else(Utc::now),
-                updated_at: DateTime::from_timestamp(row.get(9)?, 0).unwrap_or_else(Utc::now),
+                created_at: parse_timestamp_with_warning(created_ts, "created_at", config_id),
+                updated_at: parse_timestamp_with_warning(updated_ts, "updated_at", config_id),
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
@@ -441,19 +487,31 @@ pub fn get_enabled_sync_configs(pool: &DbPool) -> Result<Vec<SyncConfig>> {
 
     let configs = stmt
         .query_map([], |row| {
+            let config_id: i64 = row.get(0)?;
+            let created_ts: i64 = row.get(8)?;
+            let updated_ts: i64 = row.get(9)?;
+            let last_sync_ts: Option<i64> = row.get(6)?;
+
             Ok(SyncConfig {
-                id: Some(row.get(0)?),
+                id: Some(config_id),
                 source: row.get(1)?,
                 username: row.get(2)?,
                 api_key: row.get(3)?,
                 token: row.get(4)?,
                 sync_interval_minutes: row.get(5)?,
-                last_sync_timestamp: row
-                    .get::<_, Option<i64>>(6)?
-                    .map(|ts| DateTime::from_timestamp(ts, 0).unwrap_or_else(Utc::now)),
+                last_sync_timestamp: last_sync_ts.and_then(|ts| {
+                    DateTime::from_timestamp(ts, 0).or_else(|| {
+                        tracing::warn!(
+                            "Invalid last_sync_timestamp {} in sync_config id {}",
+                            ts,
+                            config_id
+                        );
+                        None
+                    })
+                }),
                 enabled: row.get::<_, i32>(7)? != 0,
-                created_at: DateTime::from_timestamp(row.get(8)?, 0).unwrap_or_else(Utc::now),
-                updated_at: DateTime::from_timestamp(row.get(9)?, 0).unwrap_or_else(Utc::now),
+                created_at: parse_timestamp_with_warning(created_ts, "created_at", config_id),
+                updated_at: parse_timestamp_with_warning(updated_ts, "updated_at", config_id),
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
