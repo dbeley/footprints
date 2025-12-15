@@ -557,6 +557,79 @@
             font-size: 0.85em;
         }
 
+        /* Sync configuration styles */
+        .sync-config-item {
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            background: var(--tile);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sync-config-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .sync-config-name {
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .sync-config-details {
+            color: var(--muted);
+            font-size: 0.9em;
+        }
+
+        .sync-config-status {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+
+        .sync-config-status.enabled {
+            background: rgba(34, 197, 94, 0.12);
+            border: 1px solid rgba(34, 197, 94, 0.32);
+            color: #10b981;
+        }
+
+        .sync-config-status.disabled {
+            background: rgba(220, 38, 38, 0.15);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            color: #ef4444;
+        }
+
+        .sync-config-actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .add-sync-form {
+            margin-top: 16px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--tile);
+        }
+
+        .add-sync-form summary {
+            cursor: pointer;
+            padding: 4px;
+            color: var(--accent);
+        }
+
+        .add-sync-form summary:hover {
+            color: var(--accent-strong);
+        }
+
         @media (max-width: 900px) {
             .tiles {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -688,10 +761,47 @@
     </div>
 
     <div id="import" class="tab-content">
+        <!-- Automatic Sync Section -->
         <div class="panel">
             <div class="panel-heading">
-                <h2>Import data</h2>
-                <span class="muted">Pull from Last.fm or ListenBrainz</span>
+                <h2>🔄 Automatic Sync</h2>
+                <span class="muted">Keep your history synchronized automatically</span>
+            </div>
+            <div id="syncMessage"></div>
+            
+            <!-- Sync Configuration List -->
+            <div id="syncConfigList">
+                <div class="loading-state">Loading sync configurations...</div>
+            </div>
+
+            <!-- Add New Sync Config Form -->
+            <details class="add-sync-form">
+                <summary><strong>➕ Add New Sync Configuration</strong></summary>
+                <div style="margin-top: 12px;">
+                    <h3>Last.fm Auto-Sync</h3>
+                    <div class="report-grid">
+                        <input type="text" id="syncLastfmUsername" placeholder="Last.fm username">
+                        <input type="text" id="syncLastfmApiKey" placeholder="Last.fm API key">
+                        <input type="number" id="syncLastfmInterval" placeholder="Sync interval (minutes)" value="60" min="15" max="1440">
+                        <button onclick="addSyncConfig('lastfm')" id="addSyncLastfmBtn">Add Last.fm Sync</button>
+                    </div>
+                    
+                    <h3>ListenBrainz Auto-Sync</h3>
+                    <div class="report-grid">
+                        <input type="text" id="syncLbUsername" placeholder="ListenBrainz username">
+                        <input type="text" id="syncLbToken" placeholder="ListenBrainz token (optional)">
+                        <input type="number" id="syncLbInterval" placeholder="Sync interval (minutes)" value="60" min="15" max="1440">
+                        <button onclick="addSyncConfig('listenbrainz')" id="addSyncLbBtn">Add ListenBrainz Sync</button>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <!-- One-Time Import Section -->
+        <div class="panel">
+            <div class="panel-heading">
+                <h2>📥 One-Time Import</h2>
+                <span class="muted">Pull all history from Last.fm or ListenBrainz</span>
             </div>
             <div id="importMessage"></div>
             <h3>Last.fm</h3>
@@ -705,6 +815,19 @@
                 <input type="text" id="lbUsername" placeholder="ListenBrainz username">
                 <input type="text" id="lbToken" placeholder="ListenBrainz token (optional)">
                 <button onclick="importListenBrainz()" id="lbBtn">Import from ListenBrainz</button>
+            </div>
+        </div>
+
+        <!-- Export Section -->
+        <div class="panel">
+            <div class="panel-heading">
+                <h2>📤 Export Data</h2>
+                <span class="muted">Download your scrobble history</span>
+            </div>
+            <div id="exportMessage"></div>
+            <div class="report-grid">
+                <button onclick="exportData('json')" id="exportJsonBtn">Export as JSON</button>
+                <button onclick="exportData('csv')" id="exportCsvBtn">Export as CSV</button>
             </div>
         </div>
     </div>
@@ -1041,6 +1164,237 @@
             }
         }
 
+        // Sync configuration functions
+        async function loadSyncConfigs() {
+            try {
+                const response = await fetch('/api/sync/config');
+                const configs = await response.json();
+                
+                const container = document.getElementById('syncConfigList');
+                if (configs.length === 0) {
+                    container.innerHTML = '<div class="muted" style="padding: 12px;">No sync configurations yet. Add one below to keep your history automatically updated.</div>';
+                    return;
+                }
+                
+                container.innerHTML = configs.map(config => `
+                    <div class="sync-config-item">
+                        <div class="sync-config-info">
+                            <div class="sync-config-name">
+                                ${config.source === 'lastfm' ? '🎵 Last.fm' : '🎧 ListenBrainz'}: ${escapeHtml(config.username)}
+                                <span class="sync-config-status ${config.enabled ? 'enabled' : 'disabled'}">
+                                    ${config.enabled ? 'Active' : 'Paused'}
+                                </span>
+                            </div>
+                            <div class="sync-config-details">
+                                Syncs every ${config.sync_interval_minutes} minutes
+                                ${config.last_sync_timestamp ? ' • Last synced: ' + new Date(config.last_sync_timestamp).toLocaleString() : ' • Never synced'}
+                            </div>
+                        </div>
+                        <div class="sync-config-actions">
+                            <button class="ghost" onclick="triggerSync(${config.id})">Sync Now</button>
+                            <button class="ghost" onclick="toggleSyncConfig(${config.id}, ${!config.enabled})">${config.enabled ? 'Pause' : 'Resume'}</button>
+                            <button class="ghost" onclick="deleteSyncConfig(${config.id})">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading sync configs:', error);
+                document.getElementById('syncConfigList').innerHTML = '<div class="error">Failed to load sync configurations</div>';
+            }
+        }
+
+        async function addSyncConfig(source) {
+            const messageDiv = document.getElementById('syncMessage');
+            let username, apiKey, token, interval, btn;
+            
+            if (source === 'lastfm') {
+                username = document.getElementById('syncLastfmUsername').value;
+                apiKey = document.getElementById('syncLastfmApiKey').value;
+                interval = parseInt(document.getElementById('syncLastfmInterval').value);
+                btn = document.getElementById('addSyncLastfmBtn');
+                
+                if (!username || !apiKey) {
+                    messageDiv.innerHTML = '<div class="error">Please provide both username and API key</div>';
+                    return;
+                }
+            } else {
+                username = document.getElementById('syncLbUsername').value;
+                token = document.getElementById('syncLbToken').value;
+                interval = parseInt(document.getElementById('syncLbInterval').value);
+                btn = document.getElementById('addSyncLbBtn');
+                
+                if (!username) {
+                    messageDiv.innerHTML = '<div class="error">Please provide username</div>';
+                    return;
+                }
+            }
+            
+            if (!interval || interval < 15 || interval > 1440) {
+                messageDiv.innerHTML = '<div class="error">Sync interval must be between 15 and 1440 minutes</div>';
+                return;
+            }
+            
+            btn.disabled = true;
+            messageDiv.innerHTML = '<div class="loading">Adding sync configuration...</div>';
+            
+            try {
+                const body = {
+                    source,
+                    username,
+                    sync_interval_minutes: interval,
+                    enabled: true
+                };
+                
+                if (source === 'lastfm') {
+                    body.api_key = apiKey;
+                } else if (token) {
+                    body.token = token;
+                }
+                
+                const response = await fetch('/api/sync/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    messageDiv.innerHTML = `<div class="success">${result.message}</div>`;
+                    loadSyncConfigs();
+                    // Clear form
+                    if (source === 'lastfm') {
+                        document.getElementById('syncLastfmUsername').value = '';
+                        document.getElementById('syncLastfmApiKey').value = '';
+                        document.getElementById('syncLastfmInterval').value = '60';
+                    } else {
+                        document.getElementById('syncLbUsername').value = '';
+                        document.getElementById('syncLbToken').value = '';
+                        document.getElementById('syncLbInterval').value = '60';
+                    }
+                } else {
+                    messageDiv.innerHTML = `<div class="error">${result.message || 'Failed to add sync configuration'}</div>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = '<div class="error">Failed to add sync configuration</div>';
+                console.error('Error:', error);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function triggerSync(configId) {
+            const messageDiv = document.getElementById('syncMessage');
+            messageDiv.innerHTML = '<div class="loading">Triggering sync...</div>';
+            
+            try {
+                const response = await fetch(`/api/sync/config/${configId}/trigger`, {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    messageDiv.innerHTML = `<div class="success">${result.message}</div>`;
+                    loadSyncConfigs();
+                    loadStats();
+                    loadStatsUI(state.currentPeriod, state.customRange);
+                } else {
+                    messageDiv.innerHTML = `<div class="error">${result.message || 'Sync failed'}</div>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = '<div class="error">Failed to trigger sync</div>';
+                console.error('Error:', error);
+            }
+        }
+
+        async function toggleSyncConfig(configId, enable) {
+            const messageDiv = document.getElementById('syncMessage');
+            
+            try {
+                // Get current config
+                const getResponse = await fetch(`/api/sync/config/${configId}`);
+                const config = await getResponse.json();
+                
+                // Update enabled status
+                config.enabled = enable;
+                
+                const response = await fetch(`/api/sync/config/${configId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    messageDiv.innerHTML = `<div class="success">Sync configuration ${enable ? 'resumed' : 'paused'}</div>`;
+                    loadSyncConfigs();
+                } else {
+                    messageDiv.innerHTML = `<div class="error">Failed to update sync configuration</div>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = '<div class="error">Failed to update sync configuration</div>';
+                console.error('Error:', error);
+            }
+        }
+
+        async function deleteSyncConfig(configId) {
+            if (!confirm('Are you sure you want to delete this sync configuration?')) {
+                return;
+            }
+            
+            const messageDiv = document.getElementById('syncMessage');
+            
+            try {
+                const response = await fetch(`/api/sync/config/${configId}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    messageDiv.innerHTML = `<div class="success">${result.message}</div>`;
+                    loadSyncConfigs();
+                } else {
+                    messageDiv.innerHTML = `<div class="error">Failed to delete sync configuration</div>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = '<div class="error">Failed to delete sync configuration</div>';
+                console.error('Error:', error);
+            }
+        }
+
+        // Export functions
+        async function exportData(format) {
+            const messageDiv = document.getElementById('exportMessage');
+            const btn = document.getElementById(`export${format.charAt(0).toUpperCase() + format.slice(1)}Btn`);
+            
+            btn.disabled = true;
+            messageDiv.innerHTML = '<div class="loading">Preparing export...</div>';
+            
+            try {
+                const response = await fetch(`/api/export?format=${format}`);
+                
+                if (!response.ok) {
+                    throw new Error('Export failed');
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `footprints_export_${new Date().toISOString().split('T')[0]}.${format}`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                messageDiv.innerHTML = `<div class="success">Export completed successfully</div>`;
+            } catch (error) {
+                messageDiv.innerHTML = '<div class="error">Export failed</div>';
+                console.error('Error:', error);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.toggle('active', tab.dataset.tab === tabName);
@@ -1052,6 +1406,8 @@
 
             if (tabName === 'timeline' && state.currentOffset === 0) {
                 loadTimeline(0);
+            } else if (tabName === 'import') {
+                loadSyncConfigs();
             }
         }
 

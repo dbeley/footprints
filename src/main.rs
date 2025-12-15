@@ -4,6 +4,7 @@ mod images;
 mod importers;
 mod models;
 mod reports;
+mod sync;
 
 use anyhow::Result;
 use std::net::SocketAddr;
@@ -48,9 +49,14 @@ async fn main() -> Result<()> {
     let image_service = Arc::new(images::ImageService::new(pool.clone(), lastfm_api_key));
     tracing::info!("Image service initialized");
 
-    // Create router
-    let app =
-        api::create_router(pool, image_service).nest_service("/static", ServeDir::new("static"));
+    // Start sync scheduler
+    let sync_scheduler = sync::SyncScheduler::new(pool.clone());
+    sync_scheduler.start().await;
+    tracing::info!("Sync scheduler started");
+
+    // Create router with sync scheduler
+    let app = api::create_router(pool, image_service, sync_scheduler)
+        .nest_service("/static", ServeDir::new("static"));
 
     // Get port from environment or use default
     let port = std::env::var("PORT")

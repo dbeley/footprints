@@ -12,7 +12,9 @@ use std::sync::Arc;
 use crate::db::DbPool;
 use crate::images::{ImageRequest, ImageService};
 use crate::importers::{LastFmImporter, ListenBrainzImporter};
+use crate::models::SyncConfig;
 use crate::reports;
+use crate::sync::SyncScheduler;
 
 type DateRange = (Option<DateTime<Utc>>, Option<DateTime<Utc>>);
 
@@ -20,6 +22,7 @@ type DateRange = (Option<DateTime<Utc>>, Option<DateTime<Utc>>);
 pub struct AppState {
     pub pool: DbPool,
     pub image_service: Arc<ImageService>,
+    pub sync_scheduler: SyncScheduler,
 }
 
 #[derive(Deserialize)]
@@ -45,10 +48,15 @@ pub struct ImportResponse {
     message: String,
 }
 
-pub fn create_router(pool: DbPool, image_service: Arc<ImageService>) -> Router {
+pub fn create_router(
+    pool: DbPool,
+    image_service: Arc<ImageService>,
+    sync_scheduler: SyncScheduler,
+) -> Router {
     let state = AppState {
         pool,
         image_service,
+        sync_scheduler,
     };
 
     Router::new()
@@ -58,6 +66,16 @@ pub fn create_router(pool: DbPool, image_service: Arc<ImageService>) -> Router {
         .route("/api/stats/ui", get(get_stats_ui_handler))
         .route("/api/pulse", get(get_pulse_handler))
         .route("/api/import", post(import_handler))
+        .route("/api/sync/config", post(create_sync_config_handler))
+        .route("/api/sync/config", get(get_sync_configs_handler))
+        .route(
+            "/api/sync/config/:id",
+            get(get_sync_config_handler)
+                .post(update_sync_config_handler)
+                .delete(delete_sync_config_handler),
+        )
+        .route("/api/sync/config/:id/trigger", post(trigger_sync_handler))
+        .route("/api/export", get(export_handler))
         .route("/api/reports/:type", get(get_report_handler))
         .route("/api/reports/monthly", get(get_monthly_report_handler))
         .route("/api/timeline", get(get_timeline_handler))
@@ -429,5 +447,242 @@ fn parse_custom_range(start: Option<&str>, end: Option<&str>) -> Option<DateRang
     match (start_dt, end_dt) {
         (Some(s), Some(e)) => Some((Some(s), Some(e))),
         _ => None,
+    }
+}
+
+// Sync configuration handlers
+#[derive(Deserialize)]
+pub struct CreateSyncConfigParams {
+    source: String,
+    username: String,
+    api_key: Option<String>,
+    token: Option<String>,
+    #[serde(default = "default_sync_interval")]
+    sync_interval_minutes: i32,
+    #[serde(default = "default_enabled")]
+    enabled: bool,
+}
+
+fn default_sync_interval() -> i32 {
+    60 // Default to 60 minutes
+}
+
+fn default_enabled() -> bool {
+    true
+}
+
+#[derive(Serialize)]
+pub struct SyncConfigResponse {
+    success: bool,
+    message: String,
+    config: Option<SyncConfig>,
+}
+
+#[derive(Serialize)]
+pub struct SyncTriggerResponse {
+    success: bool,
+    count: usize,
+    message: String,
+}
+
+async fn create_sync_config_handler(
+    State(state): State<Arc<AppState>>,
+    Json(params): Json<CreateSyncConfigParams>,
+) -> Result<Json<SyncConfigResponse>, StatusCode> {
+    let mut config = SyncConfig::new(
+        params.source.clone(),
+        params.username.clone(),
+        params.sync_interval_minutes,
+    )
+    .with_enabled(params.enabled);
+
+    if let Some(api_key) = params.api_key {
+        config = config.with_api_key(api_key);
+    }
+
+    if let Some(token) = params.token {
+        config = config.with_token(token);
+    }
+
+    match crate::db::insert_sync_config(&state.pool, &config) {
+        Ok(_) => Ok(Json(SyncConfigResponse {
+            success: true,
+            message: format!(
+                "Sync configuration created for {} user {}",
+                params.source, params.username
+            ),
+            config: Some(config),
+        })),
+        Err(e) => {
+            tracing::error!("Failed to create sync config: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+async fn get_sync_configs_handler(
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<Vec<SyncConfig>>, StatusCode> {
+    match crate::db::get_all_sync_configs(&state.pool) {
+        Ok(configs) => Ok(Json(configs)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+async fn get_sync_config_handler(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<i64>,
+) -> Result<Json<SyncConfig>, StatusCode> {
+    match crate::db::get_sync_config(&state.pool, id) {
+        Ok(Some(config)) => Ok(Json(config)),
+        Ok(None) => Err(StatusCode::NOT_FOUND),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+async fn update_sync_config_handler(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<i64>,
+    Json(params): Json<CreateSyncConfigParams>,
+) -> Result<Json<SyncConfigResponse>, StatusCode> {
+    // Verify the config exists
+    match crate::db::get_sync_config(&state.pool, id) {
+        Ok(Some(_)) => {
+            let mut config = SyncConfig::new(
+                params.source.clone(),
+                params.username.clone(),
+                params.sync_interval_minutes,
+            )
+            .with_enabled(params.enabled);
+
+            if let Some(api_key) = params.api_key {
+                config = config.with_api_key(api_key);
+            }
+
+            if let Some(token) = params.token {
+                config = config.with_token(token);
+            }
+
+            match crate::db::insert_sync_config(&state.pool, &config) {
+                Ok(_) => Ok(Json(SyncConfigResponse {
+                    success: true,
+                    message: format!(
+                        "Sync configuration updated for {} user {}",
+                        params.source, params.username
+                    ),
+                    config: Some(config),
+                })),
+                Err(e) => {
+                    tracing::error!("Failed to update sync config: {}", e);
+                    Err(StatusCode::INTERNAL_SERVER_ERROR)
+                }
+            }
+        }
+        Ok(None) => Err(StatusCode::NOT_FOUND),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+async fn delete_sync_config_handler(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<i64>,
+) -> Result<Json<SyncConfigResponse>, StatusCode> {
+    match crate::db::delete_sync_config(&state.pool, id) {
+        Ok(_) => Ok(Json(SyncConfigResponse {
+            success: true,
+            message: "Sync configuration deleted".to_string(),
+            config: None,
+        })),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+async fn trigger_sync_handler(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<i64>,
+) -> Result<Json<SyncTriggerResponse>, StatusCode> {
+    match state.sync_scheduler.trigger_sync(id).await {
+        Ok(count) => Ok(Json(SyncTriggerResponse {
+            success: true,
+            count,
+            message: format!("Successfully synced {} new scrobbles", count),
+        })),
+        Err(e) => Ok(Json(SyncTriggerResponse {
+            success: false,
+            count: 0,
+            message: format!("Sync failed: {}", e),
+        })),
+    }
+}
+
+#[derive(Deserialize)]
+struct ExportParams {
+    #[serde(default = "default_export_format")]
+    format: String,
+}
+
+fn default_export_format() -> String {
+    "json".to_string()
+}
+
+async fn export_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<ExportParams>,
+) -> Result<axum::response::Response, StatusCode> {
+    use axum::response::Response;
+    use axum::body::Body;
+    use axum::http::header;
+
+    match crate::db::get_scrobbles(&state.pool, Some(1000000), Some(0)) {
+        Ok(scrobbles) => {
+            let (content_type, body) = match params.format.as_str() {
+                "json" => {
+                    let json = serde_json::to_string_pretty(&scrobbles)
+                        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                    ("application/json", json)
+                }
+                "csv" => {
+                    let mut csv = String::from("timestamp,artist,album,track,source\n");
+                    for scrobble in scrobbles {
+                        let album = scrobble.album.unwrap_or_default();
+                        csv.push_str(&format!(
+                            "{},{},{},{},{}\n",
+                            scrobble.timestamp.to_rfc3339(),
+                            escape_csv(&scrobble.artist),
+                            escape_csv(&album),
+                            escape_csv(&scrobble.track),
+                            scrobble.source
+                        ));
+                    }
+                    ("text/csv", csv)
+                }
+                _ => return Err(StatusCode::BAD_REQUEST),
+            };
+
+            let filename = format!(
+                "footprints_export_{}.{}",
+                Utc::now().format("%Y-%m-%d"),
+                params.format
+            );
+
+            Ok(Response::builder()
+                .status(StatusCode::OK)
+                .header(header::CONTENT_TYPE, content_type)
+                .header(
+                    header::CONTENT_DISPOSITION,
+                    format!("attachment; filename=\"{}\"", filename),
+                )
+                .body(Body::from(body))
+                .unwrap())
+        }
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+fn escape_csv(s: &str) -> String {
+    if s.contains(',') || s.contains('"') || s.contains('\n') {
+        format!("\"{}\"", s.replace('"', "\"\""))
+    } else {
+        s.to_string()
     }
 }

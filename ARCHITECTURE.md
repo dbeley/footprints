@@ -41,8 +41,31 @@ Both importers:
 - Use async/await with tokio runtime
 - Generate unique source_id for deduplication
 - Handle API errors gracefully
+- Support incremental sync via `import_since()` method
 
-### 4. Reports (`src/reports/`)
+### 4. Sync Module (`src/sync/`)
+
+Background synchronization system for automatic imports:
+
+- **SyncScheduler**: 
+  - Runs in background with tokio async runtime
+  - Checks enabled sync configs every minute
+  - Triggers sync based on configured intervals
+  - Updates last sync timestamp after successful sync
+  
+- **SyncConfig Model**:
+  - Stores sync settings per user/source
+  - Configurable sync intervals (in minutes)
+  - Can be enabled/disabled
+  - Stores API credentials securely in database
+
+Key features:
+- Incremental sync: Only fetches scrobbles since last sync
+- No duplicates: Leverages existing database constraints
+- Manual trigger: API endpoint to force immediate sync
+- Coexists with one-time import functionality
+
+### 5. Reports (`src/reports/`)
 
 Report generation for different time periods:
 
@@ -52,18 +75,27 @@ Report generation for different time periods:
 - Last month report
 - Top artists, tracks, and albums
 
-### 5. API Layer (`src/api/`)
+### 6. API Layer (`src/api/`)
 
 REST API built with Axum:
 
+**Scrobbles & Stats:**
 - **GET /**: Main HTML interface
 - **GET /api/scrobbles**: Paginated scrobbles list
 - **GET /api/stats**: Overall statistics
 - **GET /api/timeline**: Timeline view
 - **GET /api/reports/:type**: Generated reports
-- **POST /api/import**: Import data from Last.fm or ListenBrainz
+- **POST /api/import**: Import data from Last.fm or ListenBrainz (one-time)
 
-### 6. Frontend (`templates/`)
+**Sync Configuration:**
+- **POST /api/sync/config**: Create or update sync configuration
+- **GET /api/sync/config**: Get all sync configurations
+- **GET /api/sync/config/:id**: Get specific sync configuration
+- **POST /api/sync/config/:id**: Update sync configuration
+- **DELETE /api/sync/config/:id**: Delete sync configuration
+- **POST /api/sync/config/:id/trigger**: Manually trigger a sync
+
+### 7. Frontend (`templates/`)
 
 Minimalist HTML/CSS/JavaScript interface:
 
@@ -75,7 +107,7 @@ Minimalist HTML/CSS/JavaScript interface:
 
 ## Data Flow
 
-### Import Flow
+### One-Time Import Flow
 
 ```
 User Request → API Handler → Importer
@@ -87,6 +119,26 @@ User Request → API Handler → Importer
                         Database Layer
                                 ↓
                           SQLite DB
+```
+
+### Automatic Sync Flow
+
+```
+SyncScheduler (background) → Check enabled configs
+                                    ↓
+                          Check last sync time
+                                    ↓
+                          Importer.import_since()
+                                    ↓
+                              External API
+                                    ↓
+                          New Scrobble Objects
+                                    ↓
+                            Database Layer
+                                    ↓
+                              SQLite DB
+                                    ↓
+                          Update last_sync_timestamp
 ```
 
 ### Query Flow
@@ -116,6 +168,22 @@ CREATE TABLE scrobbles (
 CREATE INDEX idx_timestamp ON scrobbles(timestamp DESC);
 CREATE INDEX idx_artist ON scrobbles(artist);
 CREATE INDEX idx_source_id ON scrobbles(source_id);
+
+CREATE TABLE sync_configs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source TEXT NOT NULL,
+    username TEXT NOT NULL,
+    api_key TEXT,
+    token TEXT,
+    sync_interval_minutes INTEGER NOT NULL DEFAULT 60,
+    last_sync_timestamp INTEGER,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    UNIQUE(source, username)
+);
+
+CREATE INDEX idx_sync_configs_enabled ON sync_configs(enabled, source);
 ```
 
 ## Deployment
@@ -137,9 +205,11 @@ Simple deployment with:
 ## Performance Considerations
 
 1. **Connection Pooling**: r2d2 manages database connections efficiently
-2. **Indices**: Strategic indices on timestamp, artist, and source_id
+2. **Indices**: Strategic indices on timestamp, artist, source_id, and sync configs
 3. **Pagination**: API endpoints support limit/offset pagination
 4. **Deduplication**: Database-level UNIQUE constraint prevents duplicates at insert time
+5. **Incremental Sync**: Only fetches new scrobbles since last sync, reducing API calls and database operations
+6. **Background Processing**: Sync scheduler runs asynchronously without blocking the main application
 
 ## Security
 
@@ -147,6 +217,24 @@ Simple deployment with:
 2. **Input validation**: SQL injection prevented by parameterized queries
 3. **HTTPS**: Should be used with reverse proxy (nginx, Caddy) in production
 4. **CORS**: Can be configured if needed
+5. **Credential Storage**: Sync credentials stored in database (consider encryption for production)
+
+## Automatic Sync
+
+The automatic sync feature allows users to keep their scrobble history up-to-date without manual intervention:
+
+- **Configuration**: Create sync configs via API with source, username, and credentials
+- **Scheduling**: Background scheduler checks for due syncs every minute
+- **Incremental Updates**: Only fetches scrobbles since the last successful sync
+- **Deduplication**: Existing database constraints prevent duplicate entries
+- **Manual Trigger**: API endpoint available to force immediate sync
+- **Coexistence**: Works alongside one-time import functionality
+
+### Sync Interval Recommendations
+
+- **High activity users**: 15-30 minutes
+- **Normal users**: 60 minutes (default)
+- **Light users**: 120-240 minutes
 
 ## Future Enhancements
 
@@ -155,8 +243,10 @@ Potential areas for extension:
 - User authentication and multi-user support
 - More visualizations (charts, graphs)
 - Export functionality (CSV, JSON)
-- Scheduled automatic imports
 - Integration with more services (Spotify, Apple Music)
 - Advanced statistics (listening patterns, discovery rate)
 - Search and filtering
 - Tags and playlists
+- Sync status history and error logging
+- Web UI for sync configuration management
+- Notification system for sync failures

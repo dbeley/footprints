@@ -35,25 +35,6 @@ nix run
 nix build
 ```
 
-**NixOS Configuration:**
-
-Add to your `configuration.nix`:
-
-```nix
-{
-  inputs.footprints.url = "github:dbeley/footprints";
-  
-  # In your configuration
-  services.footprints = {
-    enable = true;
-    port = 3000;
-    openFirewall = true;
-    # Optional: environment file for API keys
-    environmentFile = /run/secrets/footprints-env;
-  };
-}
-```
-
 ### Using Docker Compose
 
 1. Create a `.env` file in the project root with your Last.fm API key:
@@ -107,46 +88,39 @@ LASTFM_API_KEY=your_lastfm_api_key_here
 
 1. **Access the Web Interface**: Open `http://localhost:3000` in your browser
 
-2. **Import Data**:
+2. **Import Data** (One-time):
    - Go to the "Import" tab
    - For Last.fm: Enter your username and API key (get one at https://www.last.fm/api/account/create)
    - For ListenBrainz: Enter your username (token is optional)
    - Click import and wait for the process to complete
 
-3. **View Statistics**:
+3. **Automatic Sync** (Optional):
+   - Set up automatic sync via the API (see Sync API section below)
+   - Configure sync interval (default: 60 minutes)
+   - Sync runs in the background and fetches only new scrobbles
+   - No duplicates will be created thanks to database constraints
+
+4. **View Statistics**:
    - **Overview**: See your top artists and tracks
    - **Timeline**: Browse your listening history chronologically
    - **Reports**: Generate yearly, monthly, or all-time reports
 
 ## API Endpoints
 
+### Scrobbles & Stats
 - `GET /api/scrobbles?limit=100&offset=0` - Get scrobbles with pagination
 - `GET /api/stats` - Get overall statistics
 - `GET /api/timeline?limit=50&offset=0` - Get timeline data
 - `GET /api/reports/{type}` - Get reports (types: `alltime`, `lastmonth`, `2024`, etc.)
-- `POST /api/import` - Import data from Last.fm or ListenBrainz
+- `POST /api/import` - Import data from Last.fm or ListenBrainz (one-time)
 
-### Import API Example
-
-```bash
-# Last.fm import
-curl -X POST http://localhost:3000/api/import \
-  -H "Content-Type: application/json" \
-  -d '{
-    "source": "lastfm",
-    "username": "your_username",
-    "api_key": "your_api_key"
-  }'
-
-# ListenBrainz import
-curl -X POST http://localhost:3000/api/import \
-  -H "Content-Type: application/json" \
-  -d '{
-    "source": "listenbrainz",
-    "username": "your_username",
-    "token": "optional_token"
-  }'
-```
+### Sync Configuration
+- `POST /api/sync/config` - Create or update a sync configuration
+- `GET /api/sync/config` - Get all sync configurations
+- `GET /api/sync/config/:id` - Get a specific sync configuration
+- `POST /api/sync/config/:id` - Update a sync configuration
+- `DELETE /api/sync/config/:id` - Delete a sync configuration
+- `POST /api/sync/config/:id/trigger` - Manually trigger a sync
 
 ## Development
 
@@ -178,53 +152,6 @@ cargo fmt
 # Run linter
 cargo clippy
 ```
-
-### Pre-commit Hooks
-
-This project uses pre-commit hooks to ensure code quality. With Nix:
-
-```bash
-# Hooks are automatically installed in `nix develop`
-# They run automatically on `git commit`
-
-# Manually run all hooks
-nix flake check
-```
-
-Without Nix, install pre-commit manually:
-
-```bash
-# Install pre-commit (requires Python)
-pip install pre-commit
-
-# Install the hooks
-pre-commit install
-
-# Run manually
-pre-commit run --all-files
-```
-
-## Project Structure
-
-```
-footprints/
-├── src/
-│   ├── api/          # API endpoints and handlers
-│   ├── db/           # Database operations
-│   ├── importers/    # Last.fm and ListenBrainz importers
-│   ├── models/       # Data models
-│   ├── reports/      # Report generation
-│   └── main.rs       # Application entry point
-├── templates/        # HTML templates
-├── static/           # Static assets (if needed)
-├── Dockerfile        # Docker configuration
-├── docker-compose.yml
-└── Cargo.toml        # Rust dependencies
-```
-
-## License
-
-MIT
 
 ## Acknowledgments
 
