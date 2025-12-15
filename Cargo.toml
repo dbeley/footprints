@@ -40,5 +40,9 @@ thiserror = "1.0"
 # Configuration
 dotenvy = "0.15"
 
+[[bin]]
+name = "generate_jazz_data"
+path = "generate_jazz_data.rs"
+
 [dev-dependencies]
 tempfile = "3.8"

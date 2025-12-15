@@ -13,6 +13,25 @@ Self-hosted music history manager with stats, reports and charts, inspired by [m
 - ⚡ **Lightweight**: Minimal dependencies, fast and efficient
 - 🗄️ **SQLite Database**: Simple, portable database storage
 
+## Screenshots
+
+### Overview Dashboard
+Track your top artists, albums, and tracks with detailed statistics and beautiful visualizations.
+
+![Overview Dashboard](screenshots/overview.png)
+
+### Monthly Statistics
+Filter your listening data by time periods to see your music habits over time.
+
+![Monthly Stats](screenshots/stats-monthly.png)
+
+### Timeline
+Browse your complete listening history with detailed scrobble information.
+
+![Timeline View](screenshots/timeline.png)
+
+*Screenshots show demo data with jazz artists and standards including Miles Davis, John Coltrane, Herbie Hancock, and classic albums like "Kind of Blue" and "A Love Supreme".*
+
 ## Tech Stack
 
 - **Backend**: Rust with Axum web framework
