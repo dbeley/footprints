@@ -4,7 +4,7 @@ use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::params;
 
-use crate::models::Scrobble;
+use crate::models::{Scrobble, SyncConfig};
 
 pub type DbPool = Pool<SqliteConnectionManager>;
 
@@ -73,6 +73,31 @@ pub fn init_database(pool: &DbPool) -> Result<()> {
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_image_cache_lru
          ON image_cache(last_accessed)",
+        [],
+    )?;
+
+    // Create sync_configs table for automatic sync configuration
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS sync_configs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source TEXT NOT NULL,
+            username TEXT NOT NULL,
+            api_key TEXT,
+            token TEXT,
+            sync_interval_minutes INTEGER NOT NULL DEFAULT 60,
+            last_sync_timestamp INTEGER,
+            enabled INTEGER NOT NULL DEFAULT 1,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            UNIQUE(source, username)
+        )",
+        [],
+    )?;
+
+    // Create index for enabled sync configs
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_sync_configs_enabled
+         ON sync_configs(enabled, source)",
         [],
     )?;
 
@@ -319,6 +344,136 @@ pub fn get_album_for_track(pool: &DbPool, artist: &str, track: &str) -> Result<O
     } else {
         Ok(None)
     }
+}
+
+// Sync configuration database operations
+pub fn insert_sync_config(pool: &DbPool, config: &SyncConfig) -> Result<i64> {
+    let conn = pool.get()?;
+    let now = Utc::now().timestamp();
+
+    conn.execute(
+        "INSERT INTO sync_configs (source, username, api_key, token, sync_interval_minutes, enabled, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+         ON CONFLICT(source, username) DO UPDATE SET
+            api_key = ?3,
+            token = ?4,
+            sync_interval_minutes = ?5,
+            enabled = ?6,
+            updated_at = ?8",
+        params![
+            config.source,
+            config.username,
+            config.api_key,
+            config.token,
+            config.sync_interval_minutes,
+            if config.enabled { 1 } else { 0 },
+            now,
+            now,
+        ],
+    )?;
+
+    Ok(conn.last_insert_rowid())
+}
+
+pub fn get_sync_config(pool: &DbPool, id: i64) -> Result<Option<SyncConfig>> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT id, source, username, api_key, token, sync_interval_minutes, last_sync_timestamp, enabled, created_at, updated_at
+         FROM sync_configs WHERE id = ?1",
+    )?;
+
+    let mut rows = stmt.query(params![id])?;
+    if let Some(row) = rows.next()? {
+        Ok(Some(SyncConfig {
+            id: Some(row.get(0)?),
+            source: row.get(1)?,
+            username: row.get(2)?,
+            api_key: row.get(3)?,
+            token: row.get(4)?,
+            sync_interval_minutes: row.get(5)?,
+            last_sync_timestamp: row.get::<_, Option<i64>>(6)?.map(|ts| {
+                DateTime::from_timestamp(ts, 0).unwrap_or_else(Utc::now)
+            }),
+            enabled: row.get::<_, i32>(7)? != 0,
+            created_at: DateTime::from_timestamp(row.get(8)?, 0).unwrap_or_else(Utc::now),
+            updated_at: DateTime::from_timestamp(row.get(9)?, 0).unwrap_or_else(Utc::now),
+        }))
+    } else {
+        Ok(None)
+    }
+}
+
+pub fn get_all_sync_configs(pool: &DbPool) -> Result<Vec<SyncConfig>> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT id, source, username, api_key, token, sync_interval_minutes, last_sync_timestamp, enabled, created_at, updated_at
+         FROM sync_configs ORDER BY created_at DESC",
+    )?;
+
+    let configs = stmt
+        .query_map([], |row| {
+            Ok(SyncConfig {
+                id: Some(row.get(0)?),
+                source: row.get(1)?,
+                username: row.get(2)?,
+                api_key: row.get(3)?,
+                token: row.get(4)?,
+                sync_interval_minutes: row.get(5)?,
+                last_sync_timestamp: row.get::<_, Option<i64>>(6)?.map(|ts| {
+                    DateTime::from_timestamp(ts, 0).unwrap_or_else(Utc::now)
+                }),
+                enabled: row.get::<_, i32>(7)? != 0,
+                created_at: DateTime::from_timestamp(row.get(8)?, 0).unwrap_or_else(Utc::now),
+                updated_at: DateTime::from_timestamp(row.get(9)?, 0).unwrap_or_else(Utc::now),
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(configs)
+}
+
+pub fn get_enabled_sync_configs(pool: &DbPool) -> Result<Vec<SyncConfig>> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT id, source, username, api_key, token, sync_interval_minutes, last_sync_timestamp, enabled, created_at, updated_at
+         FROM sync_configs WHERE enabled = 1 ORDER BY created_at DESC",
+    )?;
+
+    let configs = stmt
+        .query_map([], |row| {
+            Ok(SyncConfig {
+                id: Some(row.get(0)?),
+                source: row.get(1)?,
+                username: row.get(2)?,
+                api_key: row.get(3)?,
+                token: row.get(4)?,
+                sync_interval_minutes: row.get(5)?,
+                last_sync_timestamp: row.get::<_, Option<i64>>(6)?.map(|ts| {
+                    DateTime::from_timestamp(ts, 0).unwrap_or_else(Utc::now)
+                }),
+                enabled: row.get::<_, i32>(7)? != 0,
+                created_at: DateTime::from_timestamp(row.get(8)?, 0).unwrap_or_else(Utc::now),
+                updated_at: DateTime::from_timestamp(row.get(9)?, 0).unwrap_or_else(Utc::now),
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(configs)
+}
+
+pub fn update_sync_timestamp(pool: &DbPool, id: i64, timestamp: DateTime<Utc>) -> Result<()> {
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE sync_configs SET last_sync_timestamp = ?1, updated_at = ?2 WHERE id = ?3",
+        params![timestamp.timestamp(), Utc::now().timestamp(), id],
+    )?;
+    Ok(())
+}
+
+pub fn delete_sync_config(pool: &DbPool, id: i64) -> Result<()> {
+    let conn = pool.get()?;
+    conn.execute("DELETE FROM sync_configs WHERE id = ?1", params![id])?;
+    Ok(())
 }
 
 #[cfg(test)]
