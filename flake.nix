@@ -34,7 +34,6 @@
 
         devInputs = with pkgs; [
           prek
-
           rustfmt
           clippy
         ];
@@ -45,19 +44,17 @@
           buildInputs = nativeBuildInputs ++ buildInputs ++ devInputs;
 
           shellHook = ''
-            echo "🎵 Footprints development environment"
-            echo "Rust version: $(rustc --version)"
-            echo ""
+            echo "Footprints development environment"
             echo "Available commands:"
             echo "  cargo build          - Build the project"
             echo "  cargo test           - Run tests"
             echo "  cargo run            - Run the application"
             echo "  cargo clippy         - Run linter"
             echo "  cargo fmt            - Format code"
+            echo "  prek run             - Run pre-commit hooks"
             echo ""
           '';
 
-          # Environment variables
           RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
           DATABASE_PATH = "footprints.db";
           RUST_LOG = "footprints=info";
