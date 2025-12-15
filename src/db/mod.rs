@@ -123,6 +123,35 @@ pub fn insert_scrobble(pool: &DbPool, scrobble: &Scrobble) -> Result<i64> {
     Ok(conn.last_insert_rowid())
 }
 
+pub fn insert_scrobbles_batch(pool: &DbPool, scrobbles: &[Scrobble]) -> Result<usize> {
+    if scrobbles.is_empty() {
+        return Ok(0);
+    }
+
+    let mut conn = pool.get()?;
+    let tx = conn.transaction()?;
+
+    let mut inserted = 0;
+    for scrobble in scrobbles {
+        let changes = tx.execute(
+            "INSERT OR IGNORE INTO scrobbles (artist, album, track, timestamp, source, source_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                scrobble.artist,
+                scrobble.album,
+                scrobble.track,
+                scrobble.timestamp.timestamp(),
+                scrobble.source,
+                scrobble.source_id,
+            ],
+        )?;
+        inserted += changes;
+    }
+
+    tx.commit()?;
+    Ok(inserted)
+}
+
 pub fn get_scrobbles(
     pool: &DbPool,
     limit: Option<i64>,

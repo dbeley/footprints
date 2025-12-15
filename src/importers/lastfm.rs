@@ -84,6 +84,9 @@ impl LastFmImporter {
         let mut page = start_page;
         let per_page = 200;
         const MAX_RETRIES: u32 = 3;
+        const BATCH_SIZE: usize = 1000;
+
+        let mut batch: Vec<Scrobble> = Vec::with_capacity(BATCH_SIZE);
 
         loop {
             tracing::info!("Fetching Last.fm page {}", page);
@@ -225,12 +228,17 @@ impl LastFmImporter {
                         // Use timestamp as unique identifier for deduplication
                         scrobble = scrobble.with_source_id(format!("lastfm_{}", timestamp));
 
-                        // insert_scrobble will skip duplicates due to UNIQUE constraint
-                        if crate::db::insert_scrobble(pool, &scrobble).is_ok() {
-                            imported_count += 1;
-                        }
+                        batch.push(scrobble);
                     }
                 }
+            }
+
+            // Insert batch when it reaches the batch size
+            if batch.len() >= BATCH_SIZE {
+                let inserted = crate::db::insert_scrobbles_batch(pool, &batch)?;
+                imported_count += inserted;
+                tracing::info!("Inserted batch of {} scrobbles", inserted);
+                batch.clear();
             }
 
             // Check if we have more pages
@@ -253,6 +261,13 @@ impl LastFmImporter {
             tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         }
 
+        // Insert any remaining scrobbles in the batch
+        if !batch.is_empty() {
+            let inserted = crate::db::insert_scrobbles_batch(pool, &batch)?;
+            imported_count += inserted;
+            tracing::info!("Inserted final batch of {} scrobbles", inserted);
+        }
+
         tracing::info!("Imported {} scrobbles from Last.fm", imported_count);
         Ok(imported_count)
     }
@@ -263,6 +278,9 @@ impl LastFmImporter {
         let mut page = 1;
         let per_page = 200;
         let since_timestamp = since.timestamp();
+        const BATCH_SIZE: usize = 1000;
+
+        let mut batch: Vec<Scrobble> = Vec::with_capacity(BATCH_SIZE);
 
         loop {
             tracing::info!("Fetching Last.fm page {} (since {})", page, since);
@@ -330,11 +348,17 @@ impl LastFmImporter {
                         // Use timestamp as unique identifier
                         scrobble = scrobble.with_source_id(format!("lastfm_{}", timestamp));
 
-                        if crate::db::insert_scrobble(pool, &scrobble).is_ok() {
-                            imported_count += 1;
-                        }
+                        batch.push(scrobble);
                     }
                 }
+            }
+
+            // Insert batch when it reaches the batch size
+            if batch.len() >= BATCH_SIZE {
+                let inserted = crate::db::insert_scrobbles_batch(pool, &batch)?;
+                imported_count += inserted;
+                tracing::info!("Inserted batch of {} scrobbles", inserted);
+                batch.clear();
             }
 
             // Check if we have more pages
@@ -351,6 +375,13 @@ impl LastFmImporter {
             }
 
             page += 1;
+        }
+
+        // Insert any remaining scrobbles in the batch
+        if !batch.is_empty() {
+            let inserted = crate::db::insert_scrobbles_batch(pool, &batch)?;
+            imported_count += inserted;
+            tracing::info!("Inserted final batch of {} scrobbles", inserted);
         }
 
         tracing::info!(
