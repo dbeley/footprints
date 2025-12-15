@@ -48,7 +48,11 @@ pub struct ImportResponse {
     message: String,
 }
 
-pub fn create_router(pool: DbPool, image_service: Arc<ImageService>, sync_scheduler: SyncScheduler) -> Router {
+pub fn create_router(
+    pool: DbPool,
+    image_service: Arc<ImageService>,
+    sync_scheduler: SyncScheduler,
+) -> Router {
     let state = AppState {
         pool,
         image_service,
@@ -67,7 +71,10 @@ pub fn create_router(pool: DbPool, image_service: Arc<ImageService>, sync_schedu
         .route("/api/sync/config/:id", get(get_sync_config_handler))
         .route("/api/sync/config/:id", post(update_sync_config_handler))
         .route("/api/sync/config/:id/trigger", post(trigger_sync_handler))
-        .route("/api/sync/config/:id", axum::routing::delete(delete_sync_config_handler))
+        .route(
+            "/api/sync/config/:id",
+            axum::routing::delete(delete_sync_config_handler),
+        )
         .route("/api/reports/:type", get(get_report_handler))
         .route("/api/reports/monthly", get(get_monthly_report_handler))
         .route("/api/timeline", get(get_timeline_handler))

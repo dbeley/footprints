@@ -16,11 +16,7 @@ pub struct SyncConfig {
 }
 
 impl SyncConfig {
-    pub fn new(
-        source: String,
-        username: String,
-        sync_interval_minutes: i32,
-    ) -> Self {
+    pub fn new(source: String, username: String, sync_interval_minutes: i32) -> Self {
         let now = Utc::now();
         Self {
             id: None,

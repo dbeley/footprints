@@ -55,8 +55,8 @@ async fn main() -> Result<()> {
     tracing::info!("Sync scheduler started");
 
     // Create router with sync scheduler
-    let app =
-        api::create_router(pool, image_service, sync_scheduler).nest_service("/static", ServeDir::new("static"));
+    let app = api::create_router(pool, image_service, sync_scheduler)
+        .nest_service("/static", ServeDir::new("static"));
 
     // Get port from environment or use default
     let port = std::env::var("PORT")

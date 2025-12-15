@@ -40,6 +40,7 @@ impl SyncScheduler {
     }
 
     /// Stop the sync scheduler
+    #[allow(dead_code)]
     pub async fn stop(&self) {
         let mut running = self.running.write().await;
         *running = false;
@@ -47,6 +48,7 @@ impl SyncScheduler {
     }
 
     /// Check if the scheduler is running
+    #[allow(dead_code)]
     pub async fn is_running(&self) -> bool {
         *self.running.read().await
     }

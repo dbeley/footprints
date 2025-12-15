@@ -391,9 +391,9 @@ pub fn get_sync_config(pool: &DbPool, id: i64) -> Result<Option<SyncConfig>> {
             api_key: row.get(3)?,
             token: row.get(4)?,
             sync_interval_minutes: row.get(5)?,
-            last_sync_timestamp: row.get::<_, Option<i64>>(6)?.map(|ts| {
-                DateTime::from_timestamp(ts, 0).unwrap_or_else(Utc::now)
-            }),
+            last_sync_timestamp: row
+                .get::<_, Option<i64>>(6)?
+                .map(|ts| DateTime::from_timestamp(ts, 0).unwrap_or_else(Utc::now)),
             enabled: row.get::<_, i32>(7)? != 0,
             created_at: DateTime::from_timestamp(row.get(8)?, 0).unwrap_or_else(Utc::now),
             updated_at: DateTime::from_timestamp(row.get(9)?, 0).unwrap_or_else(Utc::now),
@@ -419,9 +419,9 @@ pub fn get_all_sync_configs(pool: &DbPool) -> Result<Vec<SyncConfig>> {
                 api_key: row.get(3)?,
                 token: row.get(4)?,
                 sync_interval_minutes: row.get(5)?,
-                last_sync_timestamp: row.get::<_, Option<i64>>(6)?.map(|ts| {
-                    DateTime::from_timestamp(ts, 0).unwrap_or_else(Utc::now)
-                }),
+                last_sync_timestamp: row
+                    .get::<_, Option<i64>>(6)?
+                    .map(|ts| DateTime::from_timestamp(ts, 0).unwrap_or_else(Utc::now)),
                 enabled: row.get::<_, i32>(7)? != 0,
                 created_at: DateTime::from_timestamp(row.get(8)?, 0).unwrap_or_else(Utc::now),
                 updated_at: DateTime::from_timestamp(row.get(9)?, 0).unwrap_or_else(Utc::now),
@@ -448,9 +448,9 @@ pub fn get_enabled_sync_configs(pool: &DbPool) -> Result<Vec<SyncConfig>> {
                 api_key: row.get(3)?,
                 token: row.get(4)?,
                 sync_interval_minutes: row.get(5)?,
-                last_sync_timestamp: row.get::<_, Option<i64>>(6)?.map(|ts| {
-                    DateTime::from_timestamp(ts, 0).unwrap_or_else(Utc::now)
-                }),
+                last_sync_timestamp: row
+                    .get::<_, Option<i64>>(6)?
+                    .map(|ts| DateTime::from_timestamp(ts, 0).unwrap_or_else(Utc::now)),
                 enabled: row.get::<_, i32>(7)? != 0,
                 created_at: DateTime::from_timestamp(row.get(8)?, 0).unwrap_or_else(Utc::now),
                 updated_at: DateTime::from_timestamp(row.get(9)?, 0).unwrap_or_else(Utc::now),

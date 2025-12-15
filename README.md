@@ -107,24 +107,39 @@ LASTFM_API_KEY=your_lastfm_api_key_here
 
 1. **Access the Web Interface**: Open `http://localhost:3000` in your browser
 
-2. **Import Data**:
+2. **Import Data** (One-time):
    - Go to the "Import" tab
    - For Last.fm: Enter your username and API key (get one at https://www.last.fm/api/account/create)
    - For ListenBrainz: Enter your username (token is optional)
    - Click import and wait for the process to complete
 
-3. **View Statistics**:
+3. **Automatic Sync** (Optional):
+   - Set up automatic sync via the API (see Sync API section below)
+   - Configure sync interval (default: 60 minutes)
+   - Sync runs in the background and fetches only new scrobbles
+   - No duplicates will be created thanks to database constraints
+
+4. **View Statistics**:
    - **Overview**: See your top artists and tracks
    - **Timeline**: Browse your listening history chronologically
    - **Reports**: Generate yearly, monthly, or all-time reports
 
 ## API Endpoints
 
+### Scrobbles & Stats
 - `GET /api/scrobbles?limit=100&offset=0` - Get scrobbles with pagination
 - `GET /api/stats` - Get overall statistics
 - `GET /api/timeline?limit=50&offset=0` - Get timeline data
 - `GET /api/reports/{type}` - Get reports (types: `alltime`, `lastmonth`, `2024`, etc.)
-- `POST /api/import` - Import data from Last.fm or ListenBrainz
+- `POST /api/import` - Import data from Last.fm or ListenBrainz (one-time)
+
+### Sync Configuration
+- `POST /api/sync/config` - Create or update a sync configuration
+- `GET /api/sync/config` - Get all sync configurations
+- `GET /api/sync/config/:id` - Get a specific sync configuration
+- `POST /api/sync/config/:id` - Update a sync configuration
+- `DELETE /api/sync/config/:id` - Delete a sync configuration
+- `POST /api/sync/config/:id/trigger` - Manually trigger a sync
 
 ### Import API Example
 
@@ -146,6 +161,41 @@ curl -X POST http://localhost:3000/api/import \
     "username": "your_username",
     "token": "optional_token"
   }'
+```
+
+### Sync API Examples
+
+```bash
+# Create a Last.fm sync configuration (syncs every 60 minutes)
+curl -X POST http://localhost:3000/api/sync/config \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": "lastfm",
+    "username": "your_username",
+    "api_key": "your_api_key",
+    "sync_interval_minutes": 60,
+    "enabled": true
+  }'
+
+# Create a ListenBrainz sync configuration (syncs every 30 minutes)
+curl -X POST http://localhost:3000/api/sync/config \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": "listenbrainz",
+    "username": "your_username",
+    "token": "optional_token",
+    "sync_interval_minutes": 30,
+    "enabled": true
+  }'
+
+# Get all sync configurations
+curl http://localhost:3000/api/sync/config
+
+# Manually trigger a sync for configuration with ID 1
+curl -X POST http://localhost:3000/api/sync/config/1/trigger
+
+# Delete a sync configuration
+curl -X DELETE http://localhost:3000/api/sync/config/1
 ```
 
 ## Development
