@@ -9,9 +9,12 @@ license = "MIT"
 [dependencies]
 # Web framework
 axum = "0.7"
-tokio = { version = "1", features = ["full"] }
+# Optimized: Use only required tokio features instead of "full"
+# Removes: process, signal, fs, io-util, io-std, test-util, parking_lot, etc.
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "time", "sync"] }
 tower = "0.4"
-tower-http = { version = "0.5", features = ["fs", "trace"] }
+# Optimized: Disable default features, enable only what's needed
+tower-http = { version = "0.5", default-features = false, features = ["fs", "trace"] }
 
 # Database
 rusqlite = { version = "0.31", features = ["bundled"] }
@@ -23,11 +26,14 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # HTTP client for API calls
-reqwest = { version = "0.12", features = ["json"] }
+# Optimized: Use rustls-tls instead of default (which enables both rustls AND native-tls)
+# This eliminates duplicate TLS stack compilation
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 urlencoding = "2.1"
 
 # Date/Time handling
-chrono = { version = "0.4", features = ["serde"] }
+# Optimized: Disable default features, enable only required ones
+chrono = { version = "0.4", default-features = false, features = ["serde", "clock", "std"] }
 
 # Logging
 tracing = "0.1"
@@ -42,3 +48,43 @@ dotenvy = "0.15"
 
 [dev-dependencies]
 tempfile = "3.8"
+
+# ============================================================================
+# Build Profile Optimizations
+# ============================================================================
+
+# Development profile - optimized for fast compilation
+[profile.dev]
+opt-level = 0              # No optimization for main crate
+debug = 1                  # Line tables only (faster than full debug info)
+split-debuginfo = "unpacked"  # Faster on macOS/Linux
+incremental = true         # Enable incremental compilation
+codegen-units = 256        # Maximum parallelism for faster builds
+
+# Optimize dependencies in dev mode (one-time cost, but faster runtime)
+[profile.dev.package."*"]
+opt-level = 1              # Basic optimization for dependencies
+
+# Ultra-fast development profile for quick iteration (cargo check --profile dev-fast)
+[profile.dev-fast]
+inherits = "dev"
+opt-level = 0
+debug = 0                  # No debug info at all
+incremental = true
+codegen-units = 256
+
+# Release profile - optimized for binary size and performance
+[profile.release]
+opt-level = 3              # Maximum optimization
+lto = "thin"               # Thin LTO (good balance of compile time vs optimization)
+codegen-units = 1          # Better optimization, slower compile
+debug = false              # No debug info
+strip = true               # Strip symbols for smaller binary
+panic = "abort"            # Smaller binary, faster panic handling
+
+# Maximum optimization profile for production
+[profile.release-max]
+inherits = "release"
+lto = "fat"                # Full LTO for maximum optimization
+codegen-units = 1
+opt-level = 3

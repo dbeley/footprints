@@ -36,6 +36,8 @@
           prek
           rustfmt
           clippy
+          mold
+          clang
         ];
 
       in

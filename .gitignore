@@ -1,6 +1,9 @@
 # Rust
 /target
 
+# Cargo local configuration (user-specific build settings)
+/.cargo/config.toml
+
 # Database
 *.db
 *.db-shm
