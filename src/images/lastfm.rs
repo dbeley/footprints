@@ -4,23 +4,29 @@ use serde::Deserialize;
 use super::types::ImageSize;
 
 #[derive(Debug, Deserialize)]
-struct ArtistInfo {
-    artist: Artist,
-}
-
-#[derive(Debug, Deserialize)]
 struct AlbumInfo {
     album: Album,
 }
 
 #[derive(Debug, Deserialize)]
-struct Artist {
+struct TrackInfo {
+    track: Track,
+}
+
+#[derive(Debug, Deserialize)]
+struct Album {
     #[serde(default)]
     image: Vec<Image>,
 }
 
 #[derive(Debug, Deserialize)]
-struct Album {
+struct Track {
+    #[serde(default)]
+    album: Option<TrackAlbum>,
+}
+
+#[derive(Debug, Deserialize)]
+struct TrackAlbum {
     #[serde(default)]
     image: Vec<Image>,
 }
@@ -46,32 +52,6 @@ impl LastFmImageClient {
                 .build()
                 .unwrap(),
         }
-    }
-
-    pub async fn fetch_artist_image(
-        &self,
-        artist: &str,
-        size: ImageSize,
-    ) -> Result<Option<String>> {
-        if self.api_key.is_empty() {
-            return Ok(None);
-        }
-
-        let url = format!(
-            "https://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist={}&api_key={}&format=json",
-            urlencoding::encode(artist),
-            self.api_key
-        );
-
-        let response = self
-            .client
-            .get(&url)
-            .send()
-            .await?
-            .json::<ArtistInfo>()
-            .await?;
-
-        Ok(self.extract_image_url(&response.artist.image, size))
     }
 
     pub async fn fetch_album_image(
@@ -100,6 +80,39 @@ impl LastFmImageClient {
             .await?;
 
         Ok(self.extract_image_url(&response.album.image, size))
+    }
+
+    pub async fn fetch_track_image(
+        &self,
+        artist: &str,
+        track: &str,
+        size: ImageSize,
+    ) -> Result<Option<String>> {
+        if self.api_key.is_empty() {
+            return Ok(None);
+        }
+
+        let url = format!(
+            "https://ws.audioscrobbler.com/2.0/?method=track.getinfo&artist={}&track={}&api_key={}&format=json",
+            urlencoding::encode(artist),
+            urlencoding::encode(track),
+            self.api_key
+        );
+
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .await?
+            .json::<TrackInfo>()
+            .await?;
+
+        // Track images come from the album data within track info
+        if let Some(album) = &response.track.album {
+            return Ok(self.extract_image_url(&album.image, size));
+        }
+
+        Ok(None)
     }
 
     fn extract_image_url(&self, images: &[Image], size: ImageSize) -> Option<String> {

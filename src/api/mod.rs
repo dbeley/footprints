@@ -275,11 +275,11 @@ async fn get_stats_ui_handler(
     };
 
     // Fetch stats from database
-    let top_artists = crate::db::get_top_artists(&state.pool, 14, start_date, end_date)
+    let top_artists = crate::db::get_top_artists(&state.pool, 15, start_date, end_date)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let top_tracks = crate::db::get_top_tracks(&state.pool, 14, start_date, end_date)
+    let top_tracks = crate::db::get_top_tracks(&state.pool, 15, start_date, end_date)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-    let top_albums = crate::db::get_top_albums(&state.pool, 14, start_date, end_date)
+    let top_albums = crate::db::get_top_albums(&state.pool, 15, start_date, end_date)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let period_count = crate::db::get_scrobbles_count_in_range(&state.pool, start_date, end_date)
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
@@ -312,17 +312,27 @@ async fn get_stats_ui_handler(
         });
     }
 
-    // Fetch images for tracks (use artist image)
+    // Fetch images for tracks (try track image first, then artist, then album)
     let mut tracks_with_images = Vec::new();
     for (artist, track, count) in top_tracks {
         let mut image_url: Option<String> = state
             .image_service
-            .get_image_url(ImageRequest::artist(artist.clone()))
+            .get_image_url(ImageRequest::track(artist.clone(), track.clone()))
             .await
             .ok()
             .flatten();
 
-        // fallback: try the most common album for this track
+        // fallback 1: try artist image
+        if image_url.is_none() {
+            image_url = state
+                .image_service
+                .get_image_url(ImageRequest::artist(artist.clone()))
+                .await
+                .ok()
+                .flatten();
+        }
+
+        // fallback 2: try the most common album for this track
         if image_url.is_none() {
             if let Ok(Some(album)) = crate::db::get_album_for_track(&state.pool, &artist, &track) {
                 image_url = state

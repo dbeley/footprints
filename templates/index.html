@@ -273,34 +273,38 @@
             font-weight: 700;
         }
 
-        .tiles {
+        /* New Grid System */
+        .top-grid {
             display: grid;
-            grid-template-columns: repeat(6, minmax(0, 1fr));
-            grid-auto-rows: 110px;
-            grid-auto-flow: row;
-            gap: 8px;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
             padding: 6px;
-            background: var(--tile);
-            border: 1px solid var(--border);
-            border-radius: 12px;
         }
 
-        .tiles.dense {
-            grid-template-columns: repeat(9, minmax(0, 1fr));
-            grid-auto-rows: 90px;
-            grid-auto-flow: row;
+        body[data-layout="dense"] .top-grid {
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 8px;
         }
 
-        .tile {
+        .grid-item {
             position: relative;
             background: radial-gradient(circle at 20% 20%, rgba(125, 211, 252, 0.04), rgba(0, 0, 0, 0.35));
             border: 1px solid var(--border);
             border-radius: 10px;
             overflow: hidden;
-            min-height: 100%;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
         }
 
-        .tile .cover {
+        /* First item is taller */
+        .grid-item:first-child {
+            grid-column: span 2;
+            grid-row: span 2;
+            aspect-ratio: auto;
+        }
+
+        .grid-item .cover {
             position: absolute;
             inset: 0;
             width: 100%;
@@ -308,14 +312,13 @@
             object-fit: cover;
             filter: saturate(0.85);
             opacity: 0.92;
-            transition: opacity 0.2s ease;
         }
 
-        body[data-artwork="off"] .tile .cover {
+        body[data-artwork="off"] .grid-item .cover {
             display: none;
         }
 
-        .tile .placeholder {
+        .grid-item .placeholder {
             position: absolute;
             inset: 0;
             display: flex;
@@ -325,9 +328,10 @@
             background: linear-gradient(135deg, rgba(125, 211, 252, 0.12), rgba(95, 179, 255, 0.1));
             font-weight: 700;
             letter-spacing: 1px;
+            font-size: 1.5em;
         }
 
-        .tile .overlay {
+        .grid-item .overlay {
             position: absolute;
             inset: 0;
             padding: 12px;
@@ -335,96 +339,61 @@
             flex-direction: column;
             justify-content: flex-end;
             gap: 4px;
-            background: linear-gradient(to top, rgba(6, 9, 13, 0.8), rgba(6, 9, 13, 0.05));
+            background: linear-gradient(to top, rgba(6, 9, 13, 0.9), rgba(6, 9, 13, 0.3) 50%, transparent);
         }
 
-        .tile .rank-badge {
+        .grid-item .rank-badge {
             position: absolute;
             top: 10px;
             left: 10px;
-            background: rgba(12, 16, 22, 0.9);
+            background: rgba(12, 16, 22, 0.95);
             border: 1px solid var(--border);
             border-radius: 6px;
-            padding: 4px 8px;
+            padding: 5px 10px;
             font-weight: 700;
+            font-size: 0.9em;
         }
 
-        .tile .name {
+        .grid-item .name {
             font-weight: 700;
-            font-size: 1em;
-            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+            font-size: 0.95em;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
-        .tile .details {
+        .grid-item:first-child .name {
+            font-size: 1.2em;
+        }
+
+        .grid-item .details {
             color: var(--muted);
-            font-size: 0.9em;
+            font-size: 0.85em;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
-        .tile .count {
+        .grid-item .count {
             color: var(--accent);
-            font-size: 0.9em;
+            font-size: 0.85em;
             font-weight: 700;
+            margin-top: 2px;
         }
 
-        .tile.rank-1 { grid-column: span 3; grid-row: span 3; }
-        .tile.rank-2, .tile.rank-3, .tile.rank-4, .tile.rank-5 { grid-column: span 2; grid-row: span 2; }
+        .grid-item:first-child .count {
+            font-size: 1em;
+        }
 
-        .tiles.dense .tile.rank-1 { grid-column: span 3; grid-row: span 3; }
-        .tiles.dense .tile.rank-2, .tiles.dense .tile.rank-3, .tiles.dense .tile.rank-4, .tiles.dense .tile.rank-5 { grid-column: span 2; grid-row: span 2; }
-
-        .tiles .empty-state,
-        .tiles .loading-state {
+        .top-grid .empty-state,
+        .top-grid .loading-state {
             grid-column: 1 / -1;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 40px 20px;
             color: var(--muted);
-        }
-
-        .bar-chart {
-            margin-top: 10px;
-            display: grid;
-            gap: 8px;
-        }
-
-        .bar-row {
-            display: grid;
-            grid-template-columns: 1.2fr 3fr auto;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .bar-label {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            color: var(--text);
-        }
-
-        .bar {
-            background: var(--tile);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            overflow: hidden;
-            height: 12px;
-        }
-
-        .bar span {
-            display: block;
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent), var(--accent-strong));
-        }
-
-        .bar-value {
-            color: var(--muted);
-            font-variant-numeric: tabular-nums;
         }
 
         .pulse-chart {
@@ -631,15 +600,9 @@
         }
 
         @media (max-width: 900px) {
-            .tiles {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                grid-auto-rows: 120px;
+            .top-grid {
+                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
             }
-            .tiles.dense {
-                grid-template-columns: repeat(4, minmax(0, 1fr));
-            }
-            .tile.rank-1 { grid-column: span 3; grid-row: span 3; }
-            .tile.rank-2, .tile.rank-3, .tile.rank-4, .tile.rank-5 { grid-column: span 2; grid-row: span 2; }
         }
     </style>
 </head>
@@ -687,15 +650,10 @@
                     <div class="stat-label">Scrobbles in view</div>
                     <div class="stat-value" id="periodScrobbles">-</div>
                 </div>
-                <div class="stat-block">
-                    <div class="stat-label">Tile limit</div>
-                    <div class="stat-value" id="tileCountValue">14</div>
-                </div>
             </div>
             <div class="quick-config">
                 <label><input type="checkbox" id="artworkToggle" checked> Show artwork</label>
                 <label><input type="checkbox" id="denseToggle"> Dense grid</label>
-                <label>Tile cap <input type="number" id="tileCap" min="6" max="30" value="14"></label>
             </div>
         </div>
     </div>
@@ -706,32 +664,29 @@
                 <h2>Top Artists</h2>
                 <span class="muted">Based on selected period</span>
             </div>
-            <div class="tiles" id="topArtistsTiles">
-                <div class="loading-state">Loading tiles...</div>
+            <div class="top-grid" id="topArtistsGrid">
+                <div class="loading-state">Loading...</div>
             </div>
-            <div class="bar-chart" id="artistsBar"></div>
         </div>
 
         <div class="panel">
             <div class="panel-heading">
                 <h2>Top Albums</h2>
-                <span class="muted">Compact grid, utilitarian overlay</span>
+                <span class="muted">Based on selected period</span>
             </div>
-            <div class="tiles" id="topAlbumsTiles">
-                <div class="loading-state">Loading tiles...</div>
+            <div class="top-grid" id="topAlbumsGrid">
+                <div class="loading-state">Loading...</div>
             </div>
-            <div class="bar-chart" id="albumsBar"></div>
         </div>
 
         <div class="panel">
             <div class="panel-heading">
                 <h2>Top Tracks</h2>
-                <span class="muted">Artist + track, Maloja-style</span>
+                <span class="muted">Based on selected period</span>
             </div>
-            <div class="tiles" id="topTracksTiles">
-                <div class="loading-state">Loading tiles...</div>
+            <div class="top-grid" id="topTracksGrid">
+                <div class="loading-state">Loading...</div>
             </div>
-            <div class="bar-chart" id="tracksBar"></div>
         </div>
 
         <div class="panel">
@@ -754,8 +709,17 @@
             <div id="timelineList">
                 <div class="loading">Loading...</div>
             </div>
-            <div class="inline-actions">
-                <button class="ghost" onclick="loadMore()">Load more</button>
+            <div class="inline-actions" style="align-items: center; gap: 12px;">
+                <button class="ghost" onclick="goToFirstPage()" id="firstPageBtn" disabled>First</button>
+                <button class="ghost" onclick="goToPrevPage()" id="prevPageBtn" disabled>Previous</button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span class="muted">Page</span>
+                    <input type="number" id="pageInput" value="1" min="1" style="width: 70px; text-align: center;">
+                    <span class="muted" id="pageInfo">of ?</span>
+                    <button class="ghost" onclick="goToPage()" style="padding: 8px 12px;">Go</button>
+                </div>
+                <button class="ghost" onclick="goToNextPage()" id="nextPageBtn">Next</button>
+                <button class="ghost" onclick="goToLastPage()" id="lastPageBtn">Last</button>
             </div>
         </div>
     </div>
@@ -768,7 +732,7 @@
                 <span class="muted">Keep your history synchronized automatically</span>
             </div>
             <div id="syncMessage"></div>
-            
+
             <!-- Sync Configuration List -->
             <div id="syncConfigList">
                 <div class="loading-state">Loading sync configurations...</div>
@@ -785,7 +749,7 @@
                         <input type="number" id="syncLastfmInterval" placeholder="Sync interval (minutes)" value="60" min="15" max="1440">
                         <button onclick="addSyncConfig('lastfm')" id="addSyncLastfmBtn">Add Last.fm Sync</button>
                     </div>
-                    
+
                     <h3>ListenBrainz Auto-Sync</h3>
                     <div class="report-grid">
                         <input type="text" id="syncLbUsername" placeholder="ListenBrainz username">
@@ -835,25 +799,24 @@
     <script>
         const state = {
             currentOffset: 0,
+            currentPage: 1,
             limit: 50,
+            totalScrobbles: 0,
             currentPeriod: 'alltime',
             customRange: null,
             prefs: loadPreferences(),
         };
 
         function loadPreferences() {
-            const tileCap = parseInt(localStorage.getItem('fp_tile_cap') || '14', 10);
             return {
                 showArtwork: localStorage.getItem('fp_show_artwork') !== 'false',
                 denseGrid: localStorage.getItem('fp_dense_grid') === 'true',
-                tileCap: Number.isNaN(tileCap) ? 14 : tileCap,
             };
         }
 
         function persistPreferences() {
             localStorage.setItem('fp_show_artwork', state.prefs.showArtwork);
             localStorage.setItem('fp_dense_grid', state.prefs.denseGrid);
-            localStorage.setItem('fp_tile_cap', state.prefs.tileCap);
         }
 
         function applyPreferences() {
@@ -861,11 +824,6 @@
             document.body.dataset.layout = state.prefs.denseGrid ? 'dense' : 'wide';
             document.getElementById('artworkToggle').checked = state.prefs.showArtwork;
             document.getElementById('denseToggle').checked = state.prefs.denseGrid;
-            document.getElementById('tileCap').value = state.prefs.tileCap;
-            document.getElementById('tileCountValue').textContent = state.prefs.tileCap;
-            document.querySelectorAll('.tiles').forEach(container => {
-                container.classList.toggle('dense', state.prefs.denseGrid);
-            });
         }
 
         function periodLabel(period) {
@@ -883,6 +841,8 @@
                 const response = await fetch('/api/stats');
                 const data = await response.json();
                 document.getElementById('totalScrobbles').textContent = data.total_scrobbles.toLocaleString();
+                state.totalScrobbles = data.total_scrobbles;
+                updatePaginationInfo();
             } catch (error) {
                 console.error('Error loading stats:', error);
             }
@@ -910,13 +870,9 @@
                 document.getElementById('activePeriodLabel').textContent = label;
                 document.getElementById('periodScrobbles').textContent = data.period_scrobbles.toLocaleString();
 
-                renderTiles('topArtistsTiles', data.top_artists, 'artist');
-                renderTiles('topTracksTiles', data.top_tracks, 'track');
-                renderTiles('topAlbumsTiles', data.top_albums, 'album');
-
-                renderBarChart('artistsBar', data.top_artists, item => item.name);
-                renderBarChart('albumsBar', data.top_albums, item => `${item.artist} — ${item.album}`);
-                renderBarChart('tracksBar', data.top_tracks, item => `${item.artist} — ${item.track}`);
+                renderGrid('topArtistsGrid', data.top_artists, 'artist');
+                renderGrid('topTracksGrid', data.top_tracks, 'track');
+                renderGrid('topAlbumsGrid', data.top_albums, 'album');
 
                 loadPulse(period, range);
             } catch (error) {
@@ -924,7 +880,7 @@
             }
         }
 
-        function renderTiles(containerId, items, type) {
+        function renderGrid(containerId, items, type) {
             const container = document.getElementById(containerId);
 
             if (!items || items.length === 0) {
@@ -936,8 +892,8 @@
                 return;
             }
 
-            const limit = Math.max(6, Math.min(state.prefs.tileCap, 30));
-            const tiles = items.slice(0, limit).map((item, idx) => {
+            const limit = 15;
+            const html = items.slice(0, limit).map((item, idx) => {
                 const rank = idx + 1;
                 let name, details, count, imageUrl;
 
@@ -957,11 +913,15 @@
                     imageUrl = item.image_url;
                 }
 
-                const placeholder = !state.prefs.showArtwork || !imageUrl ? `<div class="placeholder">${getInitials(name)}</div>` : '';
-                const cover = imageUrl ? `<img class="cover" src="${escapeHtml(imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">` : '';
+                const placeholder = !state.prefs.showArtwork || !imageUrl
+                    ? `<div class="placeholder">${getInitials(name)}</div>`
+                    : '';
+                const cover = imageUrl && state.prefs.showArtwork
+                    ? `<img class="cover" src="${escapeHtml(imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">`
+                    : '';
 
                 return `
-                    <article class="tile rank-${rank}">
+                    <div class="grid-item">
                         ${cover}
                         ${placeholder}
                         <div class="overlay">
@@ -970,35 +930,11 @@
                             ${details ? `<div class="details">${escapeHtml(details)}</div>` : ''}
                             <div class="count">${count.toLocaleString()} plays</div>
                         </div>
-                    </article>
-                `;
-            }).join('');
-
-            container.innerHTML = tiles;
-            container.classList.toggle('dense', state.prefs.denseGrid);
-        }
-
-        function renderBarChart(containerId, items, labelBuilder) {
-            const container = document.getElementById(containerId);
-
-            if (!items || items.length === 0) {
-                container.innerHTML = `<div class="muted">Nothing to chart here.</div>`;
-                return;
-            }
-
-            const rows = items.slice(0, 10).map(item => ({ label: labelBuilder(item), value: item.count }));
-            const max = Math.max(...rows.map(r => r.value));
-
-            container.innerHTML = rows.map(row => {
-                const width = max ? (row.value / max) * 100 : 0;
-                return `
-                    <div class="bar-row">
-                        <span class="bar-label">${escapeHtml(row.label)}</span>
-                        <div class="bar"><span style="width:${width}%"></span></div>
-                        <span class="bar-value">${row.value.toLocaleString()}</span>
                     </div>
                 `;
             }).join('');
+
+            container.innerHTML = html;
         }
 
         async function loadPulse(period, range) {
@@ -1048,12 +984,10 @@
                 const data = await response.json();
 
                 const timeline = document.getElementById('timelineList');
-                if (offset === 0) {
-                    timeline.innerHTML = '';
-                }
+                timeline.innerHTML = '';
 
                 if (data.length === 0) {
-                    timeline.innerHTML += '<div class="loading">No more scrobbles</div>';
+                    timeline.innerHTML = '<div class="muted" style="padding: 12px;">No scrobbles found</div>';
                     return;
                 }
 
@@ -1073,13 +1007,59 @@
                 });
 
                 state.currentOffset = offset;
+                state.currentPage = Math.floor(offset / state.limit) + 1;
+                updatePaginationInfo();
             } catch (error) {
                 console.error('Error loading timeline:', error);
             }
         }
 
-        function loadMore() {
-            loadTimeline(state.currentOffset + state.limit);
+        function updatePaginationInfo() {
+            const totalPages = Math.ceil(state.totalScrobbles / state.limit);
+            document.getElementById('pageInfo').textContent = `of ${totalPages.toLocaleString()}`;
+            document.getElementById('pageInput').value = state.currentPage;
+            document.getElementById('pageInput').max = totalPages;
+
+            // Update button states
+            document.getElementById('firstPageBtn').disabled = state.currentPage === 1;
+            document.getElementById('prevPageBtn').disabled = state.currentPage === 1;
+            document.getElementById('nextPageBtn').disabled = state.currentPage >= totalPages;
+            document.getElementById('lastPageBtn').disabled = state.currentPage >= totalPages;
+        }
+
+        function goToFirstPage() {
+            loadTimeline(0);
+        }
+
+        function goToPrevPage() {
+            if (state.currentPage > 1) {
+                loadTimeline((state.currentPage - 2) * state.limit);
+            }
+        }
+
+        function goToNextPage() {
+            const totalPages = Math.ceil(state.totalScrobbles / state.limit);
+            if (state.currentPage < totalPages) {
+                loadTimeline(state.currentPage * state.limit);
+            }
+        }
+
+        function goToLastPage() {
+            const totalPages = Math.ceil(state.totalScrobbles / state.limit);
+            const lastPageOffset = (totalPages - 1) * state.limit;
+            loadTimeline(lastPageOffset);
+        }
+
+        function goToPage() {
+            const pageInput = document.getElementById('pageInput');
+            const pageNumber = parseInt(pageInput.value, 10);
+            const totalPages = Math.ceil(state.totalScrobbles / state.limit);
+
+            if (pageNumber >= 1 && pageNumber <= totalPages) {
+                loadTimeline((pageNumber - 1) * state.limit);
+            } else {
+                pageInput.value = state.currentPage;
+            }
         }
 
         async function importLastFm() {
@@ -1169,13 +1149,13 @@
             try {
                 const response = await fetch('/api/sync/config');
                 const configs = await response.json();
-                
+
                 const container = document.getElementById('syncConfigList');
                 if (configs.length === 0) {
                     container.innerHTML = '<div class="muted" style="padding: 12px;">No sync configurations yet. Add one below to keep your history automatically updated.</div>';
                     return;
                 }
-                
+
                 container.innerHTML = configs.map(config => `
                     <div class="sync-config-item">
                         <div class="sync-config-info">
@@ -1206,13 +1186,13 @@
         async function addSyncConfig(source) {
             const messageDiv = document.getElementById('syncMessage');
             let username, apiKey, token, interval, btn;
-            
+
             if (source === 'lastfm') {
                 username = document.getElementById('syncLastfmUsername').value;
                 apiKey = document.getElementById('syncLastfmApiKey').value;
                 interval = parseInt(document.getElementById('syncLastfmInterval').value);
                 btn = document.getElementById('addSyncLastfmBtn');
-                
+
                 if (!username || !apiKey) {
                     messageDiv.innerHTML = '<div class="error">Please provide both username and API key</div>';
                     return;
@@ -1222,21 +1202,21 @@
                 token = document.getElementById('syncLbToken').value;
                 interval = parseInt(document.getElementById('syncLbInterval').value);
                 btn = document.getElementById('addSyncLbBtn');
-                
+
                 if (!username) {
                     messageDiv.innerHTML = '<div class="error">Please provide username</div>';
                     return;
                 }
             }
-            
+
             if (!interval || interval < 15 || interval > 1440) {
                 messageDiv.innerHTML = '<div class="error">Sync interval must be between 15 and 1440 minutes</div>';
                 return;
             }
-            
+
             btn.disabled = true;
             messageDiv.innerHTML = '<div class="loading">Adding sync configuration...</div>';
-            
+
             try {
                 const body = {
                     source,
@@ -1244,19 +1224,19 @@
                     sync_interval_minutes: interval,
                     enabled: true
                 };
-                
+
                 if (source === 'lastfm') {
                     body.api_key = apiKey;
                 } else if (token) {
                     body.token = token;
                 }
-                
+
                 const response = await fetch('/api/sync/config', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
-                
+
                 const result = await response.json();
                 if (result.success) {
                     messageDiv.innerHTML = `<div class="success">${result.message}</div>`;
@@ -1285,12 +1265,12 @@
         async function triggerSync(configId) {
             const messageDiv = document.getElementById('syncMessage');
             messageDiv.innerHTML = '<div class="loading">Triggering sync...</div>';
-            
+
             try {
                 const response = await fetch(`/api/sync/config/${configId}/trigger`, {
                     method: 'POST'
                 });
-                
+
                 const result = await response.json();
                 if (result.success) {
                     messageDiv.innerHTML = `<div class="success">${result.message}</div>`;
@@ -1308,21 +1288,21 @@
 
         async function toggleSyncConfig(configId, enable) {
             const messageDiv = document.getElementById('syncMessage');
-            
+
             try {
                 // Get current config
                 const getResponse = await fetch(`/api/sync/config/${configId}`);
                 const config = await getResponse.json();
-                
+
                 // Update enabled status
                 config.enabled = enable;
-                
+
                 const response = await fetch(`/api/sync/config/${configId}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(config)
                 });
-                
+
                 const result = await response.json();
                 if (result.success) {
                     messageDiv.innerHTML = `<div class="success">Sync configuration ${enable ? 'resumed' : 'paused'}</div>`;
@@ -1340,14 +1320,14 @@
             if (!confirm('Are you sure you want to delete this sync configuration?')) {
                 return;
             }
-            
+
             const messageDiv = document.getElementById('syncMessage');
-            
+
             try {
                 const response = await fetch(`/api/sync/config/${configId}`, {
                     method: 'DELETE'
                 });
-                
+
                 const result = await response.json();
                 if (result.success) {
                     messageDiv.innerHTML = `<div class="success">${result.message}</div>`;
@@ -1365,17 +1345,17 @@
         async function exportData(format) {
             const messageDiv = document.getElementById('exportMessage');
             const btn = document.getElementById(`export${format.charAt(0).toUpperCase() + format.slice(1)}Btn`);
-            
+
             btn.disabled = true;
             messageDiv.innerHTML = '<div class="loading">Preparing export...</div>';
-            
+
             try {
                 const response = await fetch(`/api/export?format=${format}`);
-                
+
                 if (!response.ok) {
                     throw new Error('Export failed');
                 }
-                
+
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -1385,7 +1365,7 @@
                 a.click();
                 window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
-                
+
                 messageDiv.innerHTML = `<div class="success">Export completed successfully</div>`;
             } catch (error) {
                 messageDiv.innerHTML = '<div class="error">Export failed</div>';
@@ -1491,9 +1471,9 @@
                 state.prefs.showArtwork = e.target.checked;
                 persistPreferences();
                 applyPreferences();
-                renderTiles('topArtistsTiles', state.lastArtists || [], 'artist');
-                renderTiles('topTracksTiles', state.lastTracks || [], 'track');
-                renderTiles('topAlbumsTiles', state.lastAlbums || [], 'album');
+                renderGrid('topArtistsGrid', state.lastArtists || [], 'artist');
+                renderGrid('topTracksGrid', state.lastTracks || [], 'track');
+                renderGrid('topAlbumsGrid', state.lastAlbums || [], 'album');
             });
 
             document.getElementById('denseToggle').addEventListener('change', (e) => {
@@ -1502,19 +1482,16 @@
                 applyPreferences();
             });
 
-            document.getElementById('tileCap').addEventListener('change', (e) => {
-                const value = parseInt(e.target.value, 10);
-                if (!Number.isNaN(value)) {
-                    state.prefs.tileCap = Math.max(6, Math.min(value, 30));
-                    persistPreferences();
-                    applyPreferences();
-                    loadStatsUI(state.currentPeriod, state.customRange);
-                }
-            });
-
             applyPreferences();
             loadStats();
             loadStatsUI(state.currentPeriod, state.customRange);
+
+            // Add Enter key support for page input
+            document.getElementById('pageInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    goToPage();
+                }
+            });
         });
     </script>
 </body>

@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 pub enum EntityType {
     Artist,
     Album,
+    Track,
 }
 
 impl EntityType {
@@ -11,6 +12,7 @@ impl EntityType {
         match self {
             EntityType::Artist => "artist",
             EntityType::Album => "album",
+            EntityType::Track => "track",
         }
     }
 }
@@ -33,6 +35,7 @@ pub struct ImageRequest {
     pub entity_type: EntityType,
     pub artist_name: String,
     pub album_name: Option<String>,
+    pub track_name: Option<String>,
     pub size: ImageSize,
 }
 
@@ -42,6 +45,7 @@ impl ImageRequest {
             entity_type: EntityType::Artist,
             artist_name: name,
             album_name: None,
+            track_name: None,
             size: ImageSize::ExtraLarge,
         }
     }
@@ -51,6 +55,17 @@ impl ImageRequest {
             entity_type: EntityType::Album,
             artist_name: artist,
             album_name: Some(album),
+            track_name: None,
+            size: ImageSize::ExtraLarge,
+        }
+    }
+
+    pub fn track(artist: String, track: String) -> Self {
+        Self {
+            entity_type: EntityType::Track,
+            artist_name: artist,
+            album_name: None,
+            track_name: Some(track),
             size: ImageSize::ExtraLarge,
         }
     }

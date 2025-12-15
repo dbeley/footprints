@@ -1,5 +1,6 @@
 mod cache;
 mod lastfm;
+mod musicbrainz;
 mod types;
 
 use anyhow::Result;
@@ -8,11 +9,13 @@ use crate::db::DbPool;
 
 use cache::ImageCache;
 use lastfm::LastFmImageClient;
+use musicbrainz::MusicBrainzImageClient;
 pub use types::{EntityType, ImageRequest};
 
 pub struct ImageService {
     cache: ImageCache,
     lastfm_client: LastFmImageClient,
+    musicbrainz_client: MusicBrainzImageClient,
 }
 
 impl ImageService {
@@ -20,6 +23,7 @@ impl ImageService {
         Self {
             cache: ImageCache::new(pool),
             lastfm_client: LastFmImageClient::new(lastfm_api_key),
+            musicbrainz_client: MusicBrainzImageClient::new(),
         }
     }
 
@@ -31,18 +35,44 @@ impl ImageService {
             return Ok(cached.url);
         }
 
-        // 2. Fetch from Last.fm
+        // 2. Fetch from appropriate source
         let url = match request.entity_type {
-            EntityType::Artist => self
-                .lastfm_client
-                .fetch_artist_image(&request.artist_name, request.size)
-                .await
-                .ok()
-                .flatten(),
+            EntityType::Artist => {
+                // Last.fm artist images are broken, use MusicBrainz only
+                self.musicbrainz_client
+                    .fetch_artist_image(&request.artist_name)
+                    .await
+                    .ok()
+                    .flatten()
+            }
             EntityType::Album => {
                 if let Some(album_name) = &request.album_name {
-                    self.lastfm_client
+                    // Try Last.fm first for albums (still works)
+                    let mut url = self
+                        .lastfm_client
                         .fetch_album_image(&request.artist_name, album_name, request.size)
+                        .await
+                        .ok()
+                        .flatten();
+
+                    // Fallback to MusicBrainz if Last.fm fails
+                    if url.is_none() {
+                        url = self
+                            .musicbrainz_client
+                            .fetch_album_image(&request.artist_name, album_name)
+                            .await
+                            .ok()
+                            .flatten();
+                    }
+                    url
+                } else {
+                    None
+                }
+            }
+            EntityType::Track => {
+                if let Some(track_name) = &request.track_name {
+                    self.lastfm_client
+                        .fetch_track_image(&request.artist_name, track_name, request.size)
                         .await
                         .ok()
                         .flatten()
