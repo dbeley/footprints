@@ -35,25 +35,6 @@ nix run
 nix build
 ```
 
-**NixOS Configuration:**
-
-Add to your `configuration.nix`:
-
-```nix
-{
-  inputs.footprints.url = "github:dbeley/footprints";
-  
-  # In your configuration
-  services.footprints = {
-    enable = true;
-    port = 3000;
-    openFirewall = true;
-    # Optional: environment file for API keys
-    environmentFile = /run/secrets/footprints-env;
-  };
-}
-```
-
 ### Using Docker Compose
 
 1. Create a `.env` file in the project root with your Last.fm API key:
@@ -141,63 +122,6 @@ LASTFM_API_KEY=your_lastfm_api_key_here
 - `DELETE /api/sync/config/:id` - Delete a sync configuration
 - `POST /api/sync/config/:id/trigger` - Manually trigger a sync
 
-### Import API Example
-
-```bash
-# Last.fm import
-curl -X POST http://localhost:3000/api/import \
-  -H "Content-Type: application/json" \
-  -d '{
-    "source": "lastfm",
-    "username": "your_username",
-    "api_key": "your_api_key"
-  }'
-
-# ListenBrainz import
-curl -X POST http://localhost:3000/api/import \
-  -H "Content-Type: application/json" \
-  -d '{
-    "source": "listenbrainz",
-    "username": "your_username",
-    "token": "optional_token"
-  }'
-```
-
-### Sync API Examples
-
-```bash
-# Create a Last.fm sync configuration (syncs every 60 minutes)
-curl -X POST http://localhost:3000/api/sync/config \
-  -H "Content-Type: application/json" \
-  -d '{
-    "source": "lastfm",
-    "username": "your_username",
-    "api_key": "your_api_key",
-    "sync_interval_minutes": 60,
-    "enabled": true
-  }'
-
-# Create a ListenBrainz sync configuration (syncs every 30 minutes)
-curl -X POST http://localhost:3000/api/sync/config \
-  -H "Content-Type: application/json" \
-  -d '{
-    "source": "listenbrainz",
-    "username": "your_username",
-    "token": "optional_token",
-    "sync_interval_minutes": 30,
-    "enabled": true
-  }'
-
-# Get all sync configurations
-curl http://localhost:3000/api/sync/config
-
-# Manually trigger a sync for configuration with ID 1
-curl -X POST http://localhost:3000/api/sync/config/1/trigger
-
-# Delete a sync configuration
-curl -X DELETE http://localhost:3000/api/sync/config/1
-```
-
 ## Development
 
 ### Using Nix (Recommended)
@@ -228,53 +152,6 @@ cargo fmt
 # Run linter
 cargo clippy
 ```
-
-### Pre-commit Hooks
-
-This project uses pre-commit hooks to ensure code quality. With Nix:
-
-```bash
-# Hooks are automatically installed in `nix develop`
-# They run automatically on `git commit`
-
-# Manually run all hooks
-nix flake check
-```
-
-Without Nix, install pre-commit manually:
-
-```bash
-# Install pre-commit (requires Python)
-pip install pre-commit
-
-# Install the hooks
-pre-commit install
-
-# Run manually
-pre-commit run --all-files
-```
-
-## Project Structure
-
-```
-footprints/
-├── src/
-│   ├── api/          # API endpoints and handlers
-│   ├── db/           # Database operations
-│   ├── importers/    # Last.fm and ListenBrainz importers
-│   ├── models/       # Data models
-│   ├── reports/      # Report generation
-│   └── main.rs       # Application entry point
-├── templates/        # HTML templates
-├── static/           # Static assets (if needed)
-├── Dockerfile        # Docker configuration
-├── docker-compose.yml
-└── Cargo.toml        # Rust dependencies
-```
-
-## License
-
-MIT
 
 ## Acknowledgments
 
