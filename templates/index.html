@@ -276,14 +276,9 @@
         /* New Grid System */
         .top-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 10px;
-            padding: 6px;
-        }
-
-        body[data-layout="dense"] .top-grid {
             grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
             gap: 8px;
+            padding: 6px;
         }
 
         .grid-item {
@@ -314,9 +309,7 @@
             opacity: 0.92;
         }
 
-        body[data-artwork="off"] .grid-item .cover {
-            display: none;
-        }
+
 
         .grid-item .placeholder {
             position: absolute;
@@ -601,12 +594,12 @@
 
         @media (max-width: 900px) {
             .top-grid {
-                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             }
         }
     </style>
 </head>
-<body data-artwork="on" data-layout="wide">
+<body>
     <header class="masthead">
         <div class="brand">
             <div class="eyebrow">Footprints</div>
@@ -651,10 +644,7 @@
                     <div class="stat-value" id="periodScrobbles">-</div>
                 </div>
             </div>
-            <div class="quick-config">
-                <label><input type="checkbox" id="artworkToggle" checked> Show artwork</label>
-                <label><input type="checkbox" id="denseToggle"> Dense grid</label>
-            </div>
+
         </div>
     </div>
 
@@ -804,27 +794,7 @@
             totalScrobbles: 0,
             currentPeriod: 'alltime',
             customRange: null,
-            prefs: loadPreferences(),
         };
-
-        function loadPreferences() {
-            return {
-                showArtwork: localStorage.getItem('fp_show_artwork') !== 'false',
-                denseGrid: localStorage.getItem('fp_dense_grid') === 'true',
-            };
-        }
-
-        function persistPreferences() {
-            localStorage.setItem('fp_show_artwork', state.prefs.showArtwork);
-            localStorage.setItem('fp_dense_grid', state.prefs.denseGrid);
-        }
-
-        function applyPreferences() {
-            document.body.dataset.artwork = state.prefs.showArtwork ? 'on' : 'off';
-            document.body.dataset.layout = state.prefs.denseGrid ? 'dense' : 'wide';
-            document.getElementById('artworkToggle').checked = state.prefs.showArtwork;
-            document.getElementById('denseToggle').checked = state.prefs.denseGrid;
-        }
 
         function periodLabel(period) {
             switch (period) {
@@ -913,10 +883,10 @@
                     imageUrl = item.image_url;
                 }
 
-                const placeholder = !state.prefs.showArtwork || !imageUrl
+                const placeholder = !imageUrl
                     ? `<div class="placeholder">${getInitials(name)}</div>`
                     : '';
-                const cover = imageUrl && state.prefs.showArtwork
+                const cover = imageUrl
                     ? `<img class="cover" src="${escapeHtml(imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'">`
                     : '';
 
@@ -1467,22 +1437,6 @@
             document.getElementById('customEnd').value = today.toISOString().slice(0, 10);
             document.getElementById('customStart').value = monthAgo.toISOString().slice(0, 10);
 
-            document.getElementById('artworkToggle').addEventListener('change', (e) => {
-                state.prefs.showArtwork = e.target.checked;
-                persistPreferences();
-                applyPreferences();
-                renderGrid('topArtistsGrid', state.lastArtists || [], 'artist');
-                renderGrid('topTracksGrid', state.lastTracks || [], 'track');
-                renderGrid('topAlbumsGrid', state.lastAlbums || [], 'album');
-            });
-
-            document.getElementById('denseToggle').addEventListener('change', (e) => {
-                state.prefs.denseGrid = e.target.checked;
-                persistPreferences();
-                applyPreferences();
-            });
-
-            applyPreferences();
             loadStats();
             loadStatsUI(state.currentPeriod, state.customRange);
 
