@@ -47,6 +47,35 @@ pub fn init_database(pool: &DbPool) -> Result<()> {
         [],
     )?;
 
+    // Create image cache table for storing Last.fm artist/album images
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS image_cache (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            entity_type TEXT NOT NULL,
+            entity_name TEXT NOT NULL,
+            entity_album TEXT,
+            image_url TEXT,
+            image_size TEXT NOT NULL,
+            fetched_at INTEGER NOT NULL,
+            last_accessed INTEGER NOT NULL,
+            UNIQUE(entity_type, entity_name, entity_album, image_size)
+        )",
+        [],
+    )?;
+
+    // Create indices for image cache
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_image_cache_lookup
+         ON image_cache(entity_type, entity_name, entity_album)",
+        [],
+    )?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_image_cache_lru
+         ON image_cache(last_accessed)",
+        [],
+    )?;
+
     Ok(())
 }
 
@@ -106,6 +135,25 @@ pub fn get_scrobbles_count(pool: &DbPool) -> Result<i64> {
     let conn = pool.get()?;
     let count: i64 = conn.query_row("SELECT COUNT(*) FROM scrobbles", [], |row| row.get(0))?;
     Ok(count)
+}
+
+pub fn get_scrobbles_count_in_range(
+    pool: &DbPool,
+    start_date: Option<DateTime<Utc>>,
+    end_date: Option<DateTime<Utc>>,
+) -> Result<i64> {
+    let conn = pool.get()?;
+
+    if let (Some(start), Some(end)) = (start_date, end_date) {
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM scrobbles WHERE timestamp >= ?1 AND timestamp <= ?2",
+            params![start.timestamp(), end.timestamp()],
+            |row| row.get(0),
+        )?;
+        Ok(count)
+    } else {
+        get_scrobbles_count(pool)
+    }
 }
 
 pub fn get_top_artists(
@@ -203,6 +251,73 @@ pub fn get_top_albums(
         })?;
         let albums: Vec<(String, String, i64)> = albums_iter.collect::<Result<Vec<_>, _>>()?;
         Ok(albums)
+    }
+}
+
+pub fn get_scrobbles_per_day(
+    pool: &DbPool,
+    start_date: Option<DateTime<Utc>>,
+    end_date: Option<DateTime<Utc>>,
+) -> Result<Vec<(String, i64)>> {
+    let conn = pool.get()?;
+
+    let (query, params) = if let (Some(start), Some(end)) = (start_date, end_date) {
+        (
+            "SELECT strftime('%Y-%m-%d', datetime(timestamp, 'unixepoch')) as day, COUNT(*) as count
+             FROM scrobbles
+             WHERE timestamp >= ?1 AND timestamp <= ?2
+             GROUP BY day
+             ORDER BY day ASC",
+            params![start.timestamp(), end.timestamp()],
+        )
+    } else {
+        (
+            "SELECT strftime('%Y-%m-%d', datetime(timestamp, 'unixepoch')) as day, COUNT(*) as count
+             FROM scrobbles
+             GROUP BY day
+             ORDER BY day ASC",
+            params![],
+        )
+    };
+
+    let mut stmt = conn.prepare(query)?;
+    let rows = stmt.query_map(params, |row| Ok((row.get(0)?, row.get(1)?)))?;
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}
+
+pub fn get_top_album_for_artist(pool: &DbPool, artist: &str) -> Result<Option<String>> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT album, COUNT(*) as count FROM scrobbles
+         WHERE artist = ?1 AND album IS NOT NULL
+         GROUP BY album
+         ORDER BY count DESC
+         LIMIT 1",
+    )?;
+
+    let mut rows = stmt.query(params![artist])?;
+    if let Some(row) = rows.next()? {
+        Ok(row.get(0)?)
+    } else {
+        Ok(None)
+    }
+}
+
+pub fn get_album_for_track(pool: &DbPool, artist: &str, track: &str) -> Result<Option<String>> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT album, COUNT(*) as count FROM scrobbles
+         WHERE artist = ?1 AND track = ?2 AND album IS NOT NULL
+         GROUP BY album
+         ORDER BY count DESC
+         LIMIT 1",
+    )?;
+
+    let mut rows = stmt.query(params![artist, track])?;
+    if let Some(row) = rows.next()? {
+        Ok(row.get(0)?)
+    } else {
+        Ok(None)
     }
 }
 

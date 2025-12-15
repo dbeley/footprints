@@ -5,16 +5,19 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use chrono::{DateTime, Datelike, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::db::DbPool;
+use crate::images::{ImageRequest, ImageService};
 use crate::importers::{LastFmImporter, ListenBrainzImporter};
 use crate::reports;
 
 #[derive(Clone)]
 pub struct AppState {
     pub pool: DbPool,
+    pub image_service: Arc<ImageService>,
 }
 
 #[derive(Deserialize)]
@@ -40,15 +43,18 @@ pub struct ImportResponse {
     message: String,
 }
 
-pub fn create_router(pool: DbPool) -> Router {
-    let state = AppState { pool };
+pub fn create_router(pool: DbPool, image_service: Arc<ImageService>) -> Router {
+    let state = AppState { pool, image_service };
 
     Router::new()
         .route("/", get(root_handler))
         .route("/api/scrobbles", get(get_scrobbles_handler))
         .route("/api/stats", get(get_stats_handler))
+        .route("/api/stats/ui", get(get_stats_ui_handler))
+        .route("/api/pulse", get(get_pulse_handler))
         .route("/api/import", post(import_handler))
         .route("/api/reports/:type", get(get_report_handler))
+        .route("/api/reports/monthly", get(get_monthly_report_handler))
         .route("/api/timeline", get(get_timeline_handler))
         .with_state(Arc::new(state))
 }
@@ -158,6 +164,26 @@ async fn get_report_handler(
     }
 }
 
+#[derive(Deserialize)]
+struct MonthlyReportParams {
+    year: i32,
+    month: u32,
+}
+
+async fn get_monthly_report_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<MonthlyReportParams>,
+) -> Result<Json<reports::Report>, StatusCode> {
+    if !(1..=12).contains(&params.month) {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    match reports::generate_monthly_report(&state.pool, params.year, params.month) {
+        Ok(r) => Ok(Json(r)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
 async fn get_timeline_handler(
     State(state): State<Arc<AppState>>,
     Query(params): Query<PaginationParams>,
@@ -165,5 +191,239 @@ async fn get_timeline_handler(
     match crate::db::get_scrobbles(&state.pool, params.limit, params.offset) {
         Ok(scrobbles) => Ok(Json(scrobbles)),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+#[derive(Deserialize)]
+struct StatsUiParams {
+    #[serde(default = "default_period")]
+    period: String,
+    start: Option<String>,
+    end: Option<String>,
+}
+
+fn default_period() -> String {
+    "alltime".to_string()
+}
+
+#[derive(Serialize)]
+struct ArtistWithImage {
+    name: String,
+    count: i64,
+    image_url: Option<String>,
+}
+
+#[derive(Serialize)]
+struct TrackWithImage {
+    artist: String,
+    track: String,
+    count: i64,
+    image_url: Option<String>,
+}
+
+#[derive(Serialize)]
+struct AlbumWithImage {
+    artist: String,
+    album: String,
+    count: i64,
+    image_url: Option<String>,
+}
+
+#[derive(Serialize)]
+struct PulsePoint {
+    day: String,
+    count: i64,
+}
+
+async fn get_stats_ui_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<StatsUiParams>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    // Calculate date range based on period
+    let (start_date, end_date) = match params.period.as_str() {
+        "today" => get_today_range(),
+        "week" => get_week_range(),
+        "month" => get_month_range(),
+        "year" => get_year_range(),
+        "custom" => parse_custom_range(params.start.as_deref(), params.end.as_deref())
+            .ok_or(StatusCode::BAD_REQUEST)?,
+        "alltime" | _ => (None, None),
+    };
+
+    // Fetch stats from database
+    let top_artists = crate::db::get_top_artists(&state.pool, 14, start_date, end_date)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let top_tracks = crate::db::get_top_tracks(&state.pool, 14, start_date, end_date)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let top_albums = crate::db::get_top_albums(&state.pool, 14, start_date, end_date)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let period_count = crate::db::get_scrobbles_count_in_range(&state.pool, start_date, end_date)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    // Fetch images for artists
+    let mut artists_with_images = Vec::new();
+    for (name, count) in top_artists {
+        let mut image_url: Option<String> = state
+            .image_service
+            .get_image_url(ImageRequest::artist(name.clone()))
+            .await
+            .ok()
+            .flatten();
+
+        // fallback: use top album cover for this artist
+        if image_url.is_none() {
+            if let Ok(Some(album)) = crate::db::get_top_album_for_artist(&state.pool, &name) {
+                image_url = state
+                    .image_service
+                    .get_image_url(ImageRequest::album(name.clone(), album))
+                    .await
+                    .ok()
+                    .flatten();
+            }
+        }
+        artists_with_images.push(ArtistWithImage {
+            name,
+            count,
+            image_url,
+        });
+    }
+
+    // Fetch images for tracks (use artist image)
+    let mut tracks_with_images = Vec::new();
+    for (artist, track, count) in top_tracks {
+        let mut image_url: Option<String> = state
+            .image_service
+            .get_image_url(ImageRequest::artist(artist.clone()))
+            .await
+            .ok()
+            .flatten();
+
+        // fallback: try the most common album for this track
+        if image_url.is_none() {
+            if let Ok(Some(album)) = crate::db::get_album_for_track(&state.pool, &artist, &track) {
+                image_url = state
+                    .image_service
+                    .get_image_url(ImageRequest::album(artist.clone(), album))
+                    .await
+                    .ok()
+                    .flatten();
+            }
+        }
+        tracks_with_images.push(TrackWithImage {
+            artist,
+            track,
+            count,
+            image_url,
+        });
+    }
+
+    // Fetch images for albums
+    let mut albums_with_images = Vec::new();
+    for (artist, album, count) in top_albums {
+        let image_url: Option<String> = state
+            .image_service
+            .get_image_url(ImageRequest::album(artist.clone(), album.clone()))
+            .await
+            .ok()
+            .flatten();
+        albums_with_images.push(AlbumWithImage {
+            artist,
+            album,
+            count,
+            image_url,
+        });
+    }
+
+    Ok(Json(serde_json::json!({
+        "period": params.period,
+        "period_scrobbles": period_count,
+        "top_artists": artists_with_images,
+        "top_tracks": tracks_with_images,
+        "top_albums": albums_with_images,
+    })))
+}
+
+#[derive(Deserialize)]
+struct PulseParams {
+    #[serde(default = "default_period")]
+    period: String,
+    start: Option<String>,
+    end: Option<String>,
+}
+
+async fn get_pulse_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<PulseParams>,
+) -> Result<Json<Vec<PulsePoint>>, StatusCode> {
+    let (start_date, end_date) = match params.period.as_str() {
+        "today" => get_today_range(),
+        "week" => get_week_range(),
+        "month" => get_month_range(),
+        "year" => get_year_range(),
+        "custom" => parse_custom_range(params.start.as_deref(), params.end.as_deref())
+            .ok_or(StatusCode::BAD_REQUEST)?,
+        "alltime" | _ => (None, None),
+    };
+
+    let data = crate::db::get_scrobbles_per_day(&state.pool, start_date, end_date)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok(Json(
+        data.into_iter()
+            .map(|(day, count)| PulsePoint { day, count })
+            .collect(),
+    ))
+}
+
+fn get_today_range() -> (Option<DateTime<Utc>>, Option<DateTime<Utc>>) {
+    let now = Utc::now();
+    let today_start = now
+        .date_naive()
+        .and_hms_opt(0, 0, 0)
+        .and_then(|dt| dt.and_local_timezone(Utc).single());
+    (today_start, Some(now))
+}
+
+fn get_week_range() -> (Option<DateTime<Utc>>, Option<DateTime<Utc>>) {
+    let now = Utc::now();
+    let week_ago = now - Duration::days(7);
+    (Some(week_ago), Some(now))
+}
+
+fn get_month_range() -> (Option<DateTime<Utc>>, Option<DateTime<Utc>>) {
+    let now = Utc::now();
+    let month_start = now
+        .date_naive()
+        .with_day(1)
+        .and_then(|d| d.and_hms_opt(0, 0, 0))
+        .and_then(|dt| dt.and_local_timezone(Utc).single());
+    (month_start, Some(now))
+}
+
+fn get_year_range() -> (Option<DateTime<Utc>>, Option<DateTime<Utc>>) {
+    let now = Utc::now();
+    let year_start = now
+        .date_naive()
+        .with_month(1)
+        .and_then(|d| d.with_day(1))
+        .and_then(|d| d.and_hms_opt(0, 0, 0))
+        .and_then(|dt| dt.and_local_timezone(Utc).single());
+    (year_start, Some(now))
+}
+
+fn parse_custom_range(
+    start: Option<&str>,
+    end: Option<&str>,
+) -> Option<(Option<DateTime<Utc>>, Option<DateTime<Utc>>)> {
+    let start_dt = start
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+    let end_dt = end
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    match (start_dt, end_dt) {
+        (Some(s), Some(e)) => Some((Some(s), Some(e))),
+        _ => None,
     }
 }

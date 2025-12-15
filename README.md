@@ -56,11 +56,21 @@ Add to your `configuration.nix`:
 
 ### Using Docker Compose
 
+1. Create a `.env` file in the project root with your Last.fm API key:
+
+```env
+LASTFM_API_KEY=your_lastfm_api_key_here
+```
+
+2. Start the application:
+
 ```bash
 docker-compose up -d
 ```
 
 The application will be available at `http://localhost:3000`
+
+**Note**: To enable artist/album images in the UI, you need a Last.fm API key. Get one for free at https://www.last.fm/api/account/create
 
 ### Manual Build
 
@@ -74,13 +84,24 @@ cargo run --release
 
 ## Configuration
 
-Create a `.env` file in the project root (optional):
+Create a `.env` file in the project root:
 
 ```env
+# Database configuration
 DATABASE_PATH=footprints.db
+
+# Server configuration
 PORT=3000
+
+# Logging level
 RUST_LOG=footprints=info
+
+# Last.fm API key for artist/album images (required for Maloja-style UI)
+# Get your API key at: https://www.last.fm/api/account/create
+LASTFM_API_KEY=your_lastfm_api_key_here
 ```
+
+**Important**: The `LASTFM_API_KEY` is required for the new Maloja-style UI to display artist and album images. Without it, the application will still work but will show gradient placeholders instead of images.
 
 ## Usage
 

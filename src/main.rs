@@ -1,11 +1,13 @@
 mod api;
 mod db;
+mod images;
 mod importers;
 mod models;
 mod reports;
 
 use anyhow::Result;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -36,8 +38,19 @@ async fn main() -> Result<()> {
 
     tracing::info!("Database initialized successfully");
 
+    // Get Last.fm API key from environment
+    let lastfm_api_key = std::env::var("LASTFM_API_KEY")
+        .unwrap_or_else(|_| {
+            tracing::warn!("LASTFM_API_KEY not set; artist/album images will not be fetched");
+            String::new()
+        });
+
+    // Create image service
+    let image_service = Arc::new(images::ImageService::new(pool.clone(), lastfm_api_key));
+    tracing::info!("Image service initialized");
+
     // Create router
-    let app = api::create_router(pool).nest_service("/static", ServeDir::new("static"));
+    let app = api::create_router(pool, image_service).nest_service("/static", ServeDir::new("static"));
 
     // Get port from environment or use default
     let port = std::env::var("PORT")
