@@ -138,6 +138,7 @@ fn main() -> Result<()> {
 
     // Generate scrobbles over the past year
     let now = Utc::now();
+    // Use a deterministic seed for reproducible demo data
     let mut rng_state = 12345u64; // Simple pseudo-random number generator seed
 
     let mut scrobble_count = 0;
@@ -153,10 +154,11 @@ fn main() -> Result<()> {
 
         for _ in 0..daily_scrobbles {
             // Pick a random artist (weighted towards top artists)
-            let artist_idx = if lcg(&mut rng_state) % 100 < 40 {
+            let rand_val = lcg(&mut rng_state);
+            let artist_idx = if rand_val % 100 < 40 {
                 // 40% chance: top 5 artists
                 (lcg(&mut rng_state) % 5) as usize
-            } else if lcg(&mut rng_state) % 100 < 70 {
+            } else if rand_val % 100 < 70 {
                 // 30% chance: next 5 artists
                 (5 + lcg(&mut rng_state) % 5) as usize
             } else {
