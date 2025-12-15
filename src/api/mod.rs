@@ -75,6 +75,7 @@ pub fn create_router(
                 .delete(delete_sync_config_handler),
         )
         .route("/api/sync/config/:id/trigger", post(trigger_sync_handler))
+        .route("/api/export", get(export_handler))
         .route("/api/reports/:type", get(get_report_handler))
         .route("/api/reports/monthly", get(get_monthly_report_handler))
         .route("/api/timeline", get(get_timeline_handler))
@@ -611,5 +612,77 @@ async fn trigger_sync_handler(
             count: 0,
             message: format!("Sync failed: {}", e),
         })),
+    }
+}
+
+#[derive(Deserialize)]
+struct ExportParams {
+    #[serde(default = "default_export_format")]
+    format: String,
+}
+
+fn default_export_format() -> String {
+    "json".to_string()
+}
+
+async fn export_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<ExportParams>,
+) -> Result<axum::response::Response, StatusCode> {
+    use axum::response::Response;
+    use axum::body::Body;
+    use axum::http::header;
+
+    match crate::db::get_scrobbles(&state.pool, Some(1000000), Some(0)) {
+        Ok(scrobbles) => {
+            let (content_type, body) = match params.format.as_str() {
+                "json" => {
+                    let json = serde_json::to_string_pretty(&scrobbles)
+                        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                    ("application/json", json)
+                }
+                "csv" => {
+                    let mut csv = String::from("timestamp,artist,album,track,source\n");
+                    for scrobble in scrobbles {
+                        let album = scrobble.album.unwrap_or_default();
+                        csv.push_str(&format!(
+                            "{},{},{},{},{}\n",
+                            scrobble.timestamp.to_rfc3339(),
+                            escape_csv(&scrobble.artist),
+                            escape_csv(&album),
+                            escape_csv(&scrobble.track),
+                            scrobble.source
+                        ));
+                    }
+                    ("text/csv", csv)
+                }
+                _ => return Err(StatusCode::BAD_REQUEST),
+            };
+
+            let filename = format!(
+                "footprints_export_{}.{}",
+                Utc::now().format("%Y-%m-%d"),
+                params.format
+            );
+
+            Ok(Response::builder()
+                .status(StatusCode::OK)
+                .header(header::CONTENT_TYPE, content_type)
+                .header(
+                    header::CONTENT_DISPOSITION,
+                    format!("attachment; filename=\"{}\"", filename),
+                )
+                .body(Body::from(body))
+                .unwrap())
+        }
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+fn escape_csv(s: &str) -> String {
+    if s.contains(',') || s.contains('"') || s.contains('\n') {
+        format!("\"{}\"", s.replace('"', "\"\""))
+    } else {
+        s.to_string()
     }
 }
