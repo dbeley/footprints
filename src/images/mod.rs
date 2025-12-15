@@ -1,6 +1,6 @@
 mod cache;
+mod deezer;
 mod lastfm;
-mod musicbrainz;
 mod types;
 
 use anyhow::Result;
@@ -8,14 +8,14 @@ use anyhow::Result;
 use crate::db::DbPool;
 
 use cache::ImageCache;
+use deezer::DeezerImageClient;
 use lastfm::LastFmImageClient;
-use musicbrainz::MusicBrainzImageClient;
 pub use types::{EntityType, ImageRequest};
 
 pub struct ImageService {
     cache: ImageCache,
     lastfm_client: LastFmImageClient,
-    musicbrainz_client: MusicBrainzImageClient,
+    deezer_client: DeezerImageClient,
 }
 
 impl ImageService {
@@ -23,7 +23,7 @@ impl ImageService {
         Self {
             cache: ImageCache::new(pool),
             lastfm_client: LastFmImageClient::new(lastfm_api_key),
-            musicbrainz_client: MusicBrainzImageClient::new(),
+            deezer_client: DeezerImageClient::new(),
         }
     }
 
@@ -38,8 +38,8 @@ impl ImageService {
         // 2. Fetch from appropriate source
         let url = match request.entity_type {
             EntityType::Artist => {
-                // Last.fm artist images are broken, use MusicBrainz only
-                self.musicbrainz_client
+                // Use Deezer for artist images (free, no API key required, reliable)
+                self.deezer_client
                     .fetch_artist_image(&request.artist_name)
                     .await
                     .ok()
@@ -55,10 +55,10 @@ impl ImageService {
                         .ok()
                         .flatten();
 
-                    // Fallback to MusicBrainz if Last.fm fails
+                    // Fallback to Deezer if Last.fm fails
                     if url.is_none() {
                         url = self
-                            .musicbrainz_client
+                            .deezer_client
                             .fetch_album_image(&request.artist_name, album_name)
                             .await
                             .ok()

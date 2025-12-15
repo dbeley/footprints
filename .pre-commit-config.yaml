@@ -8,7 +8,7 @@ repos:
       # Rust formatting
       - id: rustfmt
         name: rustfmt
-        entry: cargo fmt --check
+        entry: cargo fmt
         language: system
         types: [rust]
         pass_filenames: false

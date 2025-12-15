@@ -49,6 +49,7 @@ impl ListenBrainzImporter {
         let mut imported_count = 0;
         let mut max_ts: Option<i64> = None;
         let count = 100;
+        const MAX_RETRIES: u32 = 3;
 
         loop {
             tracing::info!(
@@ -67,28 +68,107 @@ impl ListenBrainzImporter {
                 url.push_str(&format!("&max_ts={}", ts));
             }
 
-            let mut request = self.client.get(&url);
+            // Retry logic for handling transient errors
+            let mut retry_count = 0;
+            let data = loop {
+                let mut request = self.client.get(&url);
 
-            if let Some(token) = &self.token {
-                request = request.header("Authorization", format!("Token {}", token));
-            }
+                if let Some(token) = &self.token {
+                    request = request.header("Authorization", format!("Token {}", token));
+                }
 
-            let response = request
-                .send()
-                .await
-                .context("Failed to fetch from ListenBrainz")?;
+                let response = request
+                    .send()
+                    .await
+                    .context("Failed to fetch from ListenBrainz");
 
-            if !response.status().is_success() {
-                return Err(anyhow::anyhow!(
-                    "ListenBrainz API returned error: {}",
-                    response.status()
-                ));
-            }
+                match response {
+                    Ok(resp) => {
+                        let status = resp.status();
 
-            let data: ListenBrainzResponse = response
-                .json()
-                .await
-                .context("Failed to parse ListenBrainz response")?;
+                        // Handle rate limiting or server errors with retry
+                        if status.is_server_error()
+                            || status == reqwest::StatusCode::TOO_MANY_REQUESTS
+                        {
+                            retry_count += 1;
+                            if retry_count >= MAX_RETRIES {
+                                return Err(anyhow::anyhow!(
+                                    "ListenBrainz API returned error after {} retries: {} (can resume from timestamp: {:?})",
+                                    MAX_RETRIES,
+                                    status,
+                                    max_ts
+                                ));
+                            }
+
+                            let delay = std::time::Duration::from_secs(2u64.pow(retry_count));
+                            tracing::warn!(
+                                "ListenBrainz API error: {}, retrying in {:?} (attempt {}/{})",
+                                status,
+                                delay,
+                                retry_count,
+                                MAX_RETRIES
+                            );
+                            tokio::time::sleep(delay).await;
+                            continue;
+                        }
+
+                        if !status.is_success() {
+                            return Err(anyhow::anyhow!(
+                                "ListenBrainz API returned error: {} (can resume from timestamp: {:?})",
+                                status,
+                                max_ts
+                            ));
+                        }
+
+                        // Parse response
+                        match resp.json::<ListenBrainzResponse>().await {
+                            Ok(data) => break data,
+                            Err(e) => {
+                                retry_count += 1;
+                                if retry_count >= MAX_RETRIES {
+                                    return Err(anyhow::anyhow!(
+                                        "Failed to parse ListenBrainz response after {} retries: {} (can resume from timestamp: {:?})",
+                                        MAX_RETRIES,
+                                        e,
+                                        max_ts
+                                    ));
+                                }
+
+                                let delay = std::time::Duration::from_secs(2u64.pow(retry_count));
+                                tracing::warn!(
+                                    "Failed to parse response, retrying in {:?} (attempt {}/{})",
+                                    delay,
+                                    retry_count,
+                                    MAX_RETRIES
+                                );
+                                tokio::time::sleep(delay).await;
+                                continue;
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        retry_count += 1;
+                        if retry_count >= MAX_RETRIES {
+                            return Err(anyhow::anyhow!(
+                                "Failed to fetch from ListenBrainz after {} retries: {} (can resume from timestamp: {:?})",
+                                MAX_RETRIES,
+                                e,
+                                max_ts
+                            ));
+                        }
+
+                        let delay = std::time::Duration::from_secs(2u64.pow(retry_count));
+                        tracing::warn!(
+                            "Network error: {}, retrying in {:?} (attempt {}/{})",
+                            e,
+                            delay,
+                            retry_count,
+                            MAX_RETRIES
+                        );
+                        tokio::time::sleep(delay).await;
+                    }
+                }
+            };
 
             if data.payload.listens.is_empty() {
                 break;
@@ -108,7 +188,7 @@ impl ListenBrainzImporter {
                     }
                 }
 
-                // Use recording_msid or timestamp as unique identifier
+                // Use recording_msid or timestamp as unique identifier for deduplication
                 let source_id = if let Some(msid) = &listen.recording_msid {
                     format!("listenbrainz_{}", msid)
                 } else {
@@ -116,6 +196,7 @@ impl ListenBrainzImporter {
                 };
                 scrobble = scrobble.with_source_id(source_id);
 
+                // insert_scrobble will skip duplicates due to UNIQUE constraint
                 if crate::db::insert_scrobble(pool, &scrobble).is_ok() {
                     imported_count += 1;
                 }
@@ -128,6 +209,9 @@ impl ListenBrainzImporter {
             if data.payload.listens.len() < count as usize {
                 break;
             }
+
+            // Small delay to be nice to ListenBrainz API
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         }
 
         tracing::info!("Imported {} scrobbles from ListenBrainz", imported_count);

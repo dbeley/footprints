@@ -75,9 +75,15 @@ impl LastFmImporter {
     }
 
     pub async fn import_all(&self, pool: &DbPool) -> Result<usize> {
+        self.import_all_from_page(pool, 1).await
+    }
+
+    /// Import all scrobbles starting from a specific page (for resuming failed imports)
+    pub async fn import_all_from_page(&self, pool: &DbPool, start_page: i32) -> Result<usize> {
         let mut imported_count = 0;
-        let mut page = 1;
+        let mut page = start_page;
         let per_page = 200;
+        const MAX_RETRIES: u32 = 3;
 
         loop {
             tracing::info!("Fetching Last.fm page {}", page);
@@ -87,24 +93,104 @@ impl LastFmImporter {
                 self.username, self.api_key, per_page, page
             );
 
-            let response = self
-                .client
-                .get(&url)
-                .send()
-                .await
-                .context("Failed to fetch from Last.fm")?;
+            // Retry logic for handling transient errors
+            let mut retry_count = 0;
+            let data = loop {
+                let response = self
+                    .client
+                    .get(&url)
+                    .send()
+                    .await
+                    .context("Failed to fetch from Last.fm");
 
-            if !response.status().is_success() {
-                return Err(anyhow::anyhow!(
-                    "Last.fm API returned error: {}",
-                    response.status()
-                ));
-            }
+                match response {
+                    Ok(resp) => {
+                        let status = resp.status();
 
-            let data: LastFmResponse = response
-                .json()
-                .await
-                .context("Failed to parse Last.fm response")?;
+                        // Handle rate limiting or server errors with retry
+                        if status.is_server_error()
+                            || status == reqwest::StatusCode::TOO_MANY_REQUESTS
+                        {
+                            retry_count += 1;
+                            if retry_count >= MAX_RETRIES {
+                                return Err(anyhow::anyhow!(
+                                    "Last.fm API returned error after {} retries: {} (stopped at page {})",
+                                    MAX_RETRIES,
+                                    status,
+                                    page
+                                ));
+                            }
+
+                            let delay = std::time::Duration::from_secs(2u64.pow(retry_count));
+                            tracing::warn!(
+                                "Last.fm API error: {}, retrying in {:?} (attempt {}/{})",
+                                status,
+                                delay,
+                                retry_count,
+                                MAX_RETRIES
+                            );
+                            tokio::time::sleep(delay).await;
+                            continue;
+                        }
+
+                        if !status.is_success() {
+                            return Err(anyhow::anyhow!(
+                                "Last.fm API returned error: {} (stopped at page {})",
+                                status,
+                                page
+                            ));
+                        }
+
+                        // Parse response
+                        match resp.json::<LastFmResponse>().await {
+                            Ok(data) => break data,
+                            Err(e) => {
+                                retry_count += 1;
+                                if retry_count >= MAX_RETRIES {
+                                    return Err(anyhow::anyhow!(
+                                        "Failed to parse Last.fm response after {} retries: {} (stopped at page {})",
+                                        MAX_RETRIES,
+                                        e,
+                                        page
+                                    ));
+                                }
+
+                                let delay = std::time::Duration::from_secs(2u64.pow(retry_count));
+                                tracing::warn!(
+                                    "Failed to parse response, retrying in {:?} (attempt {}/{})",
+                                    delay,
+                                    retry_count,
+                                    MAX_RETRIES
+                                );
+                                tokio::time::sleep(delay).await;
+                                continue;
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        retry_count += 1;
+                        if retry_count >= MAX_RETRIES {
+                            return Err(anyhow::anyhow!(
+                                "Failed to fetch from Last.fm after {} retries: {} (stopped at page {}). You can resume from page {} by re-running the import.",
+                                MAX_RETRIES,
+                                e,
+                                page,
+                                page
+                            ));
+                        }
+
+                        let delay = std::time::Duration::from_secs(2u64.pow(retry_count));
+                        tracing::warn!(
+                            "Network error: {}, retrying in {:?} (attempt {}/{})",
+                            e,
+                            delay,
+                            retry_count,
+                            MAX_RETRIES
+                        );
+                        tokio::time::sleep(delay).await;
+                    }
+                }
+            };
 
             if data.recenttracks.track.is_empty() {
                 break;
@@ -136,9 +222,10 @@ impl LastFmImporter {
                             }
                         }
 
-                        // Use timestamp as unique identifier
+                        // Use timestamp as unique identifier for deduplication
                         scrobble = scrobble.with_source_id(format!("lastfm_{}", timestamp));
 
+                        // insert_scrobble will skip duplicates due to UNIQUE constraint
                         if crate::db::insert_scrobble(pool, &scrobble).is_ok() {
                             imported_count += 1;
                         }
@@ -151,6 +238,7 @@ impl LastFmImporter {
                 if let (Ok(current_page), Ok(total_pages)) =
                     (attr.page.parse::<i32>(), attr.total_pages.parse::<i32>())
                 {
+                    tracing::info!("Progress: page {}/{}", current_page, total_pages);
                     if current_page >= total_pages {
                         break;
                     }
@@ -160,6 +248,9 @@ impl LastFmImporter {
             }
 
             page += 1;
+
+            // Small delay to be nice to Last.fm API
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
         }
 
         tracing::info!("Imported {} scrobbles from Last.fm", imported_count);
