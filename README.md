@@ -122,37 +122,6 @@ LASTFM_API_KEY=your_lastfm_api_key_here
 - `DELETE /api/sync/config/:id` - Delete a sync configuration
 - `POST /api/sync/config/:id/trigger` - Manually trigger a sync
 
-## Development
-
-### Using Nix (Recommended)
-
-```bash
-# Enter development shell with all dependencies
-nix develop
-
-# Pre-commit hooks are automatically installed
-# They will run on git commit
-
-# Manually run pre-commit on all files
-nix flake check
-```
-
-### Traditional Development
-
-```bash
-# Run in development mode with auto-reload
-cargo watch -x run
-
-# Run tests
-cargo test
-
-# Format code
-cargo fmt
-
-# Run linter
-cargo clippy
-```
-
 ## Acknowledgments
 
 Inspired by [maloja](https://github.com/krateng/maloja) - a self-hosted music scrobble database
