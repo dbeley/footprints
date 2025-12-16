@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::db::DbPool;
 
 pub mod sessions;
+pub mod heatmap;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Report {

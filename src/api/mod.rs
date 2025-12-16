@@ -79,6 +79,7 @@ pub fn create_router(
         .route("/api/reports/:type", get(get_report_handler))
         .route("/api/reports/monthly", get(get_monthly_report_handler))
         .route("/api/reports/sessions", get(get_sessions_handler))
+        .route("/api/reports/heatmap", get(get_heatmap_handler))
         .route("/api/timeline", get(get_timeline_handler))
         .with_state(Arc::new(state))
 }
@@ -261,6 +262,52 @@ async fn get_sessions_handler(
         params.gap_minutes,
         params.source,
         params.min_tracks,
+    ) {
+        Ok(report) => Ok(Json(report)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+#[derive(Deserialize)]
+struct HeatmapParams {
+    start: Option<String>,
+    end: Option<String>,
+    #[serde(default = "default_timezone")]
+    timezone: String,
+    #[serde(default)]
+    normalize: bool,
+}
+
+fn default_timezone() -> String {
+    "UTC".to_string()
+}
+
+async fn get_heatmap_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<HeatmapParams>,
+) -> Result<Json<reports::heatmap::HeatmapReport>, StatusCode> {
+    // Parse timezone
+    let timezone = params.timezone.parse::<chrono_tz::Tz>().unwrap_or(chrono_tz::UTC);
+    
+    // Parse date strings
+    let start = params
+        .start
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+    
+    let end = params
+        .end
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    match reports::heatmap::generate_heatmap(
+        &state.pool,
+        start,
+        end,
+        timezone,
+        params.normalize,
     ) {
         Ok(report) => Ok(Json(report)),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
