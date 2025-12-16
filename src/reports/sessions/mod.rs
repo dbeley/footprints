@@ -29,6 +29,7 @@ pub struct SessionTrack {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SessionsSummary {
     pub total_sessions: usize,
+    pub total_tracks: usize,
     pub avg_duration_minutes: f64,
     pub avg_tracks_per_session: f64,
     pub longest_session_minutes: i64,
@@ -85,7 +86,9 @@ pub fn detect_sessions(mut scrobbles: Vec<Scrobble>, gap_threshold_minutes: i64)
         } else {
             // Check gap from last track
             let last_track = current_session_tracks.last().unwrap();
-            let gap = scrobble.timestamp.signed_duration_since(last_track.timestamp);
+            let gap = scrobble
+                .timestamp
+                .signed_duration_since(last_track.timestamp);
 
             if gap > gap_threshold {
                 // End current session, start new one
@@ -181,13 +184,14 @@ pub fn generate_sessions_report(
 
     // Compute summary
     let total_sessions = sessions.len();
+    let total_tracks = sessions.iter().map(|s| s.track_count).sum::<usize>();
     let avg_duration_minutes = if total_sessions > 0 {
         sessions.iter().map(|s| s.duration_minutes).sum::<i64>() as f64 / total_sessions as f64
     } else {
         0.0
     };
     let avg_tracks_per_session = if total_sessions > 0 {
-        sessions.iter().map(|s| s.track_count).sum::<usize>() as f64 / total_sessions as f64
+        total_tracks as f64 / total_sessions as f64
     } else {
         0.0
     };
@@ -196,10 +200,12 @@ pub fn generate_sessions_report(
         .map(|s| s.duration_minutes)
         .max()
         .unwrap_or(0);
-    let total_listening_hours = sessions.iter().map(|s| s.duration_minutes).sum::<i64>() as f64 / 60.0;
+    let total_listening_hours =
+        sessions.iter().map(|s| s.duration_minutes).sum::<i64>() as f64 / 60.0;
 
     let summary = SessionsSummary {
         total_sessions,
+        total_tracks,
         avg_duration_minutes,
         avg_tracks_per_session,
         longest_session_minutes,

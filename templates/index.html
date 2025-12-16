@@ -1001,6 +1001,490 @@
             font-weight: 700;
             color: var(--accent);
         }
+
+        /* Sessions Styles */
+        .session-card {
+            background: var(--tile);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin: 8px 0;
+            transition: all 0.2s ease;
+        }
+
+        .session-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(125, 211, 252, 0.15);
+        }
+
+        .session-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .session-time {
+            font-weight: 600;
+            color: var(--accent);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .session-duration {
+            background: rgba(125, 211, 252, 0.1);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            color: var(--muted);
+        }
+
+        .session-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+            margin: 8px 0;
+        }
+
+        .session-stat {
+            text-align: center;
+            padding: 8px;
+            background: var(--panel);
+            border-radius: 6px;
+        }
+
+        .session-stat-value {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .session-stat-label {
+            font-size: 0.75em;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        .session-tracks {
+            margin-top: 12px;
+        }
+
+        .session-track {
+            padding: 6px 0;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            color: var(--muted);
+            font-size: 0.9em;
+        }
+
+        .session-track-time {
+            color: var(--accent);
+            font-family: 'Space Mono', monospace;
+            font-size: 0.8em;
+            min-width: 50px;
+        }
+
+        .session-track-info {
+            flex: 1;
+        }
+
+        .session-track-artist {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        /* Heatmap Styles */
+        .heatmap-grid {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        .heatmap-table {
+            border-collapse: collapse;
+            margin: 0 auto;
+            background: var(--panel);
+        }
+
+        .heatmap-table th {
+            padding: 8px 12px;
+            text-align: center;
+            font-size: 0.85em;
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        .heatmap-table td {
+            padding: 0;
+            text-align: center;
+        }
+
+        .heatmap-cell {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            font-weight: 600;
+            cursor: help;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border);
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            border-color: var(--accent);
+        }
+
+        .heatmap-row-label {
+            font-weight: 600;
+            color: var(--text);
+            text-align: right;
+            padding-right: 12px;
+            font-size: 0.85em;
+        }
+
+        .heatmap-legend {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0;
+            padding: 12px;
+            background: var(--tile);
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .heatmap-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .heatmap-legend-box {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .heatmap-peak-times {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .heatmap-peak {
+            background: var(--tile);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .heatmap-peak-label {
+            color: var(--muted);
+            font-size: 0.85em;
+            margin-bottom: 4px;
+        }
+
+        .heatmap-peak-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .heatmap-peak-count {
+            color: var(--muted);
+            font-size: 0.85em;
+            margin-top: 4px;
+        }
+
+        /* Diversity Styles */
+        .diversity-timeline {
+            margin: 20px 0;
+        }
+
+        .diversity-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 16px 0;
+        }
+
+        .diversity-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .diversity-label {
+            min-width: 100px;
+            font-size: 0.85em;
+            color: var(--muted);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .diversity-bar {
+            flex: 1;
+            height: 30px;
+            background: var(--tile);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .diversity-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #22c55e, #10b981);
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 8px;
+            color: white;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .diversity-value {
+            min-width: 60px;
+            text-align: right;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        /* Yearly Report Styles */
+        .yearly-hero {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, rgba(125, 211, 252, 0.1), rgba(99, 102, 241, 0.1));
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin: 20px 0;
+        }
+
+        .yearly-hero-title {
+            font-size: 3em;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .yearly-hero-subtitle {
+            font-size: 1.5em;
+            color: var(--muted);
+        }
+
+        .yearly-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .yearly-stat-card {
+            background: var(--tile);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .yearly-stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px rgba(125, 211, 252, 0.15);
+        }
+
+        .yearly-stat-value {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: var(--accent);
+            line-height: 1;
+        }
+
+        .yearly-stat-label {
+            margin-top: 8px;
+            color: var(--muted);
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .yearly-section {
+            margin: 32px 0;
+        }
+
+        .yearly-section-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .yearly-top-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .yearly-top-item {
+            background: var(--tile);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .yearly-top-item:hover {
+            border-color: var(--accent);
+            transform: translateX(4px);
+        }
+
+        .yearly-rank {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--accent);
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .yearly-top-info {
+            flex: 1;
+        }
+
+        .yearly-top-name {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .yearly-top-meta {
+            color: var(--muted);
+            font-size: 0.9em;
+            margin-top: 4px;
+        }
+
+        .yearly-top-count {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--accent);
+            margin-left: auto;
+        }
+
+        .yearly-milestone-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .yearly-milestone {
+            background: var(--tile);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .yearly-milestone-icon {
+            font-size: 3em;
+            margin-bottom: 12px;
+        }
+
+        .yearly-milestone-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+
+        .yearly-milestone-desc {
+            color: var(--muted);
+            font-size: 0.9em;
+            margin-bottom: 12px;
+        }
+
+        .yearly-milestone-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .year-comparison {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 24px;
+            margin: 24px 0;
+            align-items: center;
+        }
+
+        .year-comparison-side {
+            background: var(--tile);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .year-comparison-vs {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--muted);
+        }
+
+        .year-comparison-year {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .year-comparison-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .year-comparison-stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .year-comparison-stat:last-child {
+            border-bottom: none;
+        }
+
+        .year-comparison-change {
+            font-weight: 600;
+        }
+
+        .year-comparison-change.positive {
+            color: #22c55e;
+        }
+
+        .year-comparison-change.negative {
+            color: #ef4444;
+        }
     </style>
 </head>
 <body>
@@ -1019,8 +1503,12 @@
     <div class="tabs" id="tabButtons">
         <button class="tab active" data-tab="overview">Overview</button>
         <button class="tab" data-tab="timeline">Timeline</button>
+        <button class="tab" data-tab="sessions">Sessions</button>
+        <button class="tab" data-tab="heatmap">Heatmap</button>
         <button class="tab" data-tab="novelty">Novelty</button>
         <button class="tab" data-tab="transitions">Transitions</button>
+        <button class="tab" data-tab="diversity">Diversity</button>
+        <button class="tab" data-tab="yearly">Yearly</button>
         <button class="tab" data-tab="import">Import</button>
     </div>
 
@@ -1120,6 +1608,143 @@
         </div>
     </div>
 
+    <!-- Sessions Tab -->
+    <div id="sessions" class="tab-content">
+        <div class="panel">
+            <div class="panel-heading">
+                <h2>🎧 Listening Sessions</h2>
+                <span class="muted">Discover your listening patterns and habits</span>
+            </div>
+
+            <div class="feature-controls">
+                <label>
+                    <span>Gap threshold (minutes):</span>
+                    <input type="number" id="sessionsGap" value="45" min="5" max="180">
+                </label>
+                <label>
+                    <span>Min tracks:</span>
+                    <input type="number" id="sessionsMinTracks" value="2" min="1" max="10">
+                </label>
+                <label>
+                    <span>Source:</span>
+                    <select id="sessionsSource">
+                        <option value="">All Sources</option>
+                        <option value="lastfm">Last.fm</option>
+                        <option value="listenbrainz">ListenBrainz</option>
+                    </select>
+                </label>
+                <button onclick="loadSessionsReport()">📊 Analyze Sessions</button>
+            </div>
+
+            <div id="sessionsMessage"></div>
+            <div id="sessionsSummary"></div>
+            <div id="sessionsStats"></div>
+            <div id="sessionsList"></div>
+        </div>
+    </div>
+
+    <!-- Heatmap Tab -->
+    <div id="heatmap" class="tab-content">
+        <div class="panel">
+            <div class="panel-heading">
+                <h2>🔥 Time-of-Day Heatmap</h2>
+                <span class="muted">When do you listen to music most?</span>
+            </div>
+
+            <div class="feature-controls">
+                <label>
+                    <span>Timezone:</span>
+                    <select id="heatmapTimezone">
+                        <option value="UTC">UTC</option>
+                        <option value="America/New_York">US Eastern</option>
+                        <option value="America/Chicago">US Central</option>
+                        <option value="America/Denver">US Mountain</option>
+                        <option value="America/Los_Angeles">US Pacific</option>
+                        <option value="Europe/London">London</option>
+                        <option value="Europe/Paris">Paris</option>
+                        <option value="Europe/Berlin">Berlin</option>
+                        <option value="Asia/Tokyo">Tokyo</option>
+                        <option value="Asia/Shanghai">Shanghai</option>
+                        <option value="Australia/Sydney">Sydney</option>
+                    </select>
+                </label>
+                <label>
+                    <input type="checkbox" id="heatmapNormalize">
+                    <span>Normalize (show percentages)</span>
+                </label>
+                <button onclick="loadHeatmapReport()">🔥 Generate Heatmap</button>
+            </div>
+
+            <div id="heatmapMessage"></div>
+            <div id="heatmapSummary"></div>
+            <div id="heatmapViz"></div>
+        </div>
+    </div>
+
+    <!-- Diversity Tab -->
+    <div id="diversity" class="tab-content">
+        <div class="panel">
+            <div class="panel-heading">
+                <h2>📊 Diversity & Entropy Trend</h2>
+                <span class="muted">Measure how diverse your listening is over time</span>
+            </div>
+
+            <div class="feature-controls">
+                <label>
+                    <span>Granularity:</span>
+                    <select id="diversityGranularity">
+                        <option value="day">Day</option>
+                        <option value="week" selected>Week</option>
+                        <option value="month">Month</option>
+                    </select>
+                </label>
+                <button onclick="loadDiversityReport()">📊 Analyze Diversity</button>
+            </div>
+
+            <div id="diversityMessage"></div>
+            <div id="diversitySummary"></div>
+            <div id="diversityTimeline"></div>
+        </div>
+    </div>
+
+    <!-- Yearly Report Tab -->
+    <div id="yearly" class="tab-content">
+        <div class="panel">
+            <div class="panel-heading">
+                <h2>🎉 Yearly Report (Wrapped)</h2>
+                <span class="muted">Your year in music, Spotify Wrapped style</span>
+            </div>
+
+            <div class="feature-controls">
+                <label>
+                    <span>Year:</span>
+                    <select id="yearlyYear"></select>
+                </label>
+                <button onclick="loadYearlyReport()">🎉 Generate Report</button>
+                <button onclick="showComparisonControls()" class="ghost">📊 Compare Years</button>
+            </div>
+
+            <div id="yearComparisonControls" style="display: none; margin-top: 12px;">
+                <div class="feature-controls">
+                    <label>
+                        <span>Compare:</span>
+                        <select id="compareYear1"></select>
+                    </label>
+                    <label>
+                        <span>vs.</span>
+                        <select id="compareYear2"></select>
+                    </label>
+                    <button onclick="loadYearComparison()">Compare</button>
+                    <button onclick="hideComparisonControls()" class="ghost">Cancel</button>
+                </div>
+            </div>
+
+            <div id="yearlyMessage"></div>
+            <div id="yearlyContent"></div>
+            <div id="yearComparisonContent"></div>
+        </div>
+    </div>
+
     <div id="import" class="tab-content">
         <!-- Automatic Sync Section -->
         <div class="panel">
@@ -1199,7 +1824,7 @@
                 <h2>🆕 Novelty vs. Re-listen</h2>
                 <span class="muted">Track your musical exploration over time</span>
             </div>
-            
+
             <div class="feature-controls">
                 <label>
                     <span>Granularity:</span>
@@ -1211,7 +1836,7 @@
                 </label>
                 <button onclick="loadNoveltyReport()">📊 Generate Report</button>
             </div>
-            
+
             <div id="noveltyMessage"></div>
             <div id="noveltySummary"></div>
             <div id="noveltyTimeline"></div>
@@ -1227,7 +1852,7 @@
                 <h2>🔀 Artist Transitions</h2>
                 <span class="muted">Discover how artists flow into each other</span>
             </div>
-            
+
             <div class="feature-controls">
                 <label>
                     <span>Gap (minutes):</span>
@@ -1243,7 +1868,7 @@
                 </label>
                 <button onclick="loadTransitionsReport()">🔍 Analyze Transitions</button>
             </div>
-            
+
             <div id="transitionsMessage"></div>
             <div id="transitionsSummary"></div>
             <div id="transitionsTop"></div>
@@ -1823,12 +2448,18 @@
                 loadTimeline(0);
             } else if (tabName === 'import') {
                 loadSyncConfigs();
+            } else if (tabName === 'sessions') {
+                loadSessionsReport();
+            } else if (tabName === 'heatmap') {
+                loadHeatmapReport();
             } else if (tabName === 'novelty') {
-                // Auto-load novelty report when tab is opened
                 loadNoveltyReport();
             } else if (tabName === 'transitions') {
-                // Auto-load transitions report when tab is opened
                 loadTransitionsReport();
+            } else if (tabName === 'diversity') {
+                loadDiversityReport();
+            } else if (tabName === 'yearly') {
+                initYearlyTab();
             }
         }
 
@@ -1923,22 +2554,22 @@
         async function loadNoveltyReport() {
             const granularity = document.getElementById('noveltyGranularity').value;
             const message = document.getElementById('noveltyMessage');
-            
+
             message.innerHTML = `<div style="text-align: center; padding: 40px;">
                 <div class="loading-spinner" style="margin: 0 auto 12px;"></div>
                 <p class="muted">Analyzing your listening patterns...</p>
             </div>`;
-            
+
             try {
                 const params = new URLSearchParams({ granularity });
                 if (state.customRange) {
                     params.append('start', state.customRange.start);
                     params.append('end', state.customRange.end);
                 }
-                
+
                 const response = await fetch(`/api/reports/novelty?${params}`);
                 const data = await response.json();
-                
+
                 message.innerHTML = '';
                 renderNoveltySummary(data.summary);
                 renderNoveltyTimeline(data.timeline);
@@ -1952,11 +2583,11 @@
                 </div>`;
             }
         }
-        
+
         function renderNoveltySummary(summary) {
             const container = document.getElementById('noveltySummary');
             const noveltyPercent = (summary.avg_novelty_ratio * 100).toFixed(1);
-            
+
             container.innerHTML = `
                 <div class="metric-cards">
                     <div class="metric-card">
@@ -1984,29 +2615,29 @@
                     </div>
                 </div>
                 <div style="text-align: center; margin: 16px 0; padding: 12px; background: var(--tile); border-radius: 8px; border: 1px solid var(--border);">
-                    <span style="color: #10b981; font-weight: 600;">🎯 Most exploratory:</span> 
+                    <span style="color: #10b981; font-weight: 600;">🎯 Most exploratory:</span>
                     <span style="color: var(--text); margin-right: 20px;">${escapeHtml(summary.most_exploratory_period)}</span>
-                    <span style="color: var(--accent); font-weight: 600;">🔁 Least exploratory:</span> 
+                    <span style="color: var(--accent); font-weight: 600;">🔁 Least exploratory:</span>
                     <span style="color: var(--text);">${escapeHtml(summary.least_exploratory_period)}</span>
                 </div>
             `;
         }
-        
+
         function renderNoveltyTimeline(timeline) {
             const container = document.getElementById('noveltyTimeline');
             if (timeline.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📊</div><p>No timeline data available</p></div>';
                 return;
             }
-            
+
             let html = '<div class="section-header"><h3>📈 Novelty Timeline <span class="badge">' + timeline.length + ' periods</span></h3></div>';
             html += '<div class="timeline-viz">';
-            
+
             timeline.forEach(point => {
                 const noveltyPercent = (point.novelty_ratio * 100).toFixed(1);
                 const newPercent = point.total_scrobbles > 0 ? (point.new_tracks / point.total_scrobbles * 100) : 0;
                 const repeatPercent = 100 - newPercent;
-                
+
                 html += `
                     <div class="timeline-item">
                         <div class="timeline-period">${escapeHtml(point.period)}</div>
@@ -2021,20 +2652,20 @@
                     </div>
                 `;
             });
-            
+
             html += '</div>';
             container.innerHTML = html;
         }
-        
+
         function renderNoveltyDiscoveries(discoveries) {
             const container = document.getElementById('noveltyDiscoveries');
             if (discoveries.length === 0) {
                 container.innerHTML = '';
                 return;
             }
-            
+
             let html = '<div class="section-header"><h3>✨ New Artists Discovered <span class="badge">' + discoveries.length + '</span></h3></div>';
-            
+
             discoveries.slice(0, 20).forEach(disc => {
                 const date = new Date(disc.first_heard);
                 html += `
@@ -2053,25 +2684,25 @@
                     </div>
                 `;
             });
-            
+
             if (discoveries.length > 20) {
                 html += `<div style="text-align: center; margin-top: 12px; color: var(--muted);">
                     Showing 20 of ${discoveries.length} discoveries
                 </div>`;
             }
-            
+
             container.innerHTML = html;
         }
-        
+
         function renderNoveltyComfort(comfortTracks) {
             const container = document.getElementById('noveltyComfort');
             if (comfortTracks.length === 0) {
                 container.innerHTML = '';
                 return;
             }
-            
+
             let html = '<div class="section-header"><h3>🎧 Top Comfort Tracks <span class="badge">' + comfortTracks.length + '</span></h3></div>';
-            
+
             comfortTracks.forEach((track, index) => {
                 html += `
                     <div class="comfort-track">
@@ -2084,22 +2715,22 @@
                     </div>
                 `;
             });
-            
+
             container.innerHTML = html;
         }
-        
+
         // Transitions Report Functions
         async function loadTransitionsReport() {
             const gapMinutes = document.getElementById('transitionsGap').value;
             const minCount = document.getElementById('transitionsMinCount').value;
             const includeSelf = document.getElementById('transitionsSelfTransitions').checked;
             const message = document.getElementById('transitionsMessage');
-            
+
             message.innerHTML = `<div style="text-align: center; padding: 40px;">
                 <div class="loading-spinner" style="margin: 0 auto 12px;"></div>
                 <p class="muted">Analyzing artist transitions...</p>
             </div>`;
-            
+
             try {
                 const params = new URLSearchParams({
                     gap_minutes: gapMinutes,
@@ -2110,10 +2741,10 @@
                     params.append('start', state.customRange.start);
                     params.append('end', state.customRange.end);
                 }
-                
+
                 const response = await fetch(`/api/reports/transitions?${params}`);
                 const data = await response.json();
-                
+
                 message.innerHTML = '';
                 renderTransitionsSummary(data.summary);
                 renderTransitionsTop(data.top_transitions);
@@ -2126,11 +2757,11 @@
                 </div>`;
             }
         }
-        
+
         function renderTransitionsSummary(summary) {
             const container = document.getElementById('transitionsSummary');
             const avgTransitions = summary.avg_transitions_per_session ? summary.avg_transitions_per_session.toFixed(1) : '0';
-            
+
             container.innerHTML = `
                 <div class="metric-cards">
                     <div class="metric-card">
@@ -2156,16 +2787,16 @@
                 </div>
             `;
         }
-        
+
         function renderTransitionsTop(transitions) {
             const container = document.getElementById('transitionsTop');
             if (transitions.length === 0) {
                 container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔀</div><p>No transitions found</p></div>';
                 return;
             }
-            
+
             let html = '<div class="section-header"><h3>🔥 Top Transitions <span class="badge">' + transitions.length + '</span></h3></div>';
-            
+
             transitions.slice(0, 30).forEach(trans => {
                 html += `
                     <div class="transition-flow">
@@ -2176,19 +2807,19 @@
                     </div>
                 `;
             });
-            
+
             if (transitions.length > 30) {
                 html += `<div style="text-align: center; margin-top: 12px; color: var(--muted);">
                     Showing 30 of ${transitions.length} transitions
                 </div>`;
             }
-            
+
             container.innerHTML = html;
         }
-        
+
         function renderTransitionsNetwork(network) {
             const container = document.getElementById('transitionsNetwork');
-            
+
             let html = '<div class="section-header"><h3>🕸️ Network Graph</h3></div>';
             html += `
                 <div class="network-placeholder">
@@ -2203,7 +2834,736 @@
                     </p>
                 </div>
             `;
-            
+
+            container.innerHTML = html;
+        }
+
+        // Sessions Report Functions
+        async function loadSessionsReport() {
+            const gapMinutes = document.getElementById('sessionsGap').value;
+            const minTracks = document.getElementById('sessionsMinTracks').value;
+            const source = document.getElementById('sessionsSource').value;
+            const message = document.getElementById('sessionsMessage');
+
+            message.innerHTML = `<div style="text-align: center; padding: 40px;">
+                <div class="loading-spinner" style="margin: 0 auto 12px;"></div>
+                <p class="muted">Analyzing listening sessions...</p>
+            </div>`;
+
+            try {
+                const params = new URLSearchParams({
+                    gap_minutes: gapMinutes,
+                    min_tracks: minTracks
+                });
+
+                if (source) params.append('source', source);
+
+                if (state.customRange) {
+                    params.append('start', state.customRange.start);
+                    params.append('end', state.customRange.end);
+                }
+
+                const response = await fetch(`/api/reports/sessions?${params}`);
+                const data = await response.json();
+
+                message.innerHTML = '';
+                renderSessionsSummary(data.summary);
+                renderSessionsStats(data);
+                renderSessionsList(data.sessions);
+            } catch (error) {
+                message.innerHTML = `<div style="text-align: center; padding: 40px; color: #ef4444;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
+                    <p>Error loading sessions report</p>
+                    <p class="muted" style="margin-top: 8px;">${error.message}</p>
+                </div>`;
+            }
+        }
+
+        function renderSessionsSummary(summary) {
+            const container = document.getElementById('sessionsSummary');
+
+            container.innerHTML = `
+                <div class="metric-cards">
+                    <div class="metric-card">
+                        <div class="metric-label">Total Sessions</div>
+                        <div class="metric-value">${summary.total_sessions.toLocaleString()}</div>
+                        <div class="metric-subtext">Listening periods</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Total Tracks</div>
+                        <div class="metric-value">${summary.total_tracks.toLocaleString()}</div>
+                        <div class="metric-subtext">Across all sessions</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Avg Duration</div>
+                        <div class="metric-value">${Math.round(summary.avg_duration_minutes)}</div>
+                        <div class="metric-subtext">Minutes per session</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Avg Tracks</div>
+                        <div class="metric-value">${summary.avg_tracks_per_session.toFixed(1)}</div>
+                        <div class="metric-subtext">Per session</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSessionsStats(data) {
+            const container = document.getElementById('sessionsStats');
+            const summary = data.summary;
+
+            let html = '<div class="section-header"><h3>📊 Session Statistics</h3></div>';
+            html += '<div class="metric-cards">';
+
+            if (summary.longest_session) {
+                const duration = Math.round(summary.longest_session.duration_minutes);
+                html += `
+                    <div class="metric-card">
+                        <div class="metric-label">Longest Session</div>
+                        <div class="metric-value">${duration}</div>
+                        <div class="metric-subtext">minutes (${summary.longest_session.track_count} tracks)</div>
+                    </div>
+                `;
+            }
+
+            if (summary.most_tracks_session) {
+                html += `
+                    <div class="metric-card">
+                        <div class="metric-label">Most Tracks</div>
+                        <div class="metric-value">${summary.most_tracks_session.track_count}</div>
+                        <div class="metric-subtext">${Math.round(summary.most_tracks_session.duration_minutes)} minutes</div>
+                    </div>
+                `;
+            }
+
+            html += `
+                <div class="metric-card">
+                    <div class="metric-label">Unique Artists</div>
+                    <div class="metric-value">${summary.unique_artists_in_sessions || 0}</div>
+                    <div class="metric-subtext">Across sessions</div>
+                </div>
+            `;
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function renderSessionsList(sessions) {
+            const container = document.getElementById('sessionsList');
+
+            if (sessions.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎧</div><p>No sessions found</p></div>';
+                return;
+            }
+
+            let html = '<div class="section-header"><h3>🎵 Recent Sessions <span class="badge">' + sessions.length + '</span></h3></div>';
+
+            sessions.slice(0, 20).forEach(session => {
+                const startDate = new Date(session.start_time);
+                const endDate = new Date(session.end_time);
+
+                html += `
+                    <div class="session-card">
+                        <div class="session-header">
+                            <div class="session-time">
+                                ${startDate.toLocaleString()}
+                            </div>
+                            <div class="session-duration">
+                                ${Math.round(session.duration_minutes)} min
+                            </div>
+                        </div>
+                        <div class="session-stats">
+                            <div class="session-stat">
+                                <div class="session-stat-value">${session.track_count}</div>
+                                <div class="session-stat-label">Tracks</div>
+                            </div>
+                            <div class="session-stat">
+                                <div class="session-stat-value">${session.unique_artists}</div>
+                                <div class="session-stat-label">Artists</div>
+                            </div>
+                        </div>
+                        <details class="session-tracks">
+                            <summary style="cursor: pointer; color: var(--accent); margin: 8px 0;">
+                                Show tracks (${session.tracks.length})
+                            </summary>
+                            ${session.tracks.slice(0, 10).map(track => `
+                                <div class="session-track">
+                                    <span class="session-track-time">${new Date(track.timestamp).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}</span>
+                                    <div class="session-track-info">
+                                        <span class="session-track-artist">${escapeHtml(track.artist)}</span>
+                                        <span> - ${escapeHtml(track.track)}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                            ${session.tracks.length > 10 ? `<div class="muted" style="text-align: center; padding: 8px;">... and ${session.tracks.length - 10} more</div>` : ''}
+                        </details>
+                    </div>
+                `;
+            });
+
+            if (sessions.length > 20) {
+                html += `<div style="text-align: center; margin-top: 12px; color: var(--muted);">
+                    Showing 20 of ${sessions.length} sessions
+                </div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        // Heatmap Report Functions
+        async function loadHeatmapReport() {
+            const timezone = document.getElementById('heatmapTimezone').value;
+            const normalize = document.getElementById('heatmapNormalize').checked;
+            const message = document.getElementById('heatmapMessage');
+
+            message.innerHTML = `<div style="text-align: center; padding: 40px;">
+                <div class="loading-spinner" style="margin: 0 auto 12px;"></div>
+                <p class="muted">Generating heatmap...</p>
+            </div>`;
+
+            try {
+                const params = new URLSearchParams({
+                    timezone: timezone,
+                    normalize: normalize
+                });
+
+                if (state.customRange) {
+                    params.append('start', state.customRange.start);
+                    params.append('end', state.customRange.end);
+                }
+
+                const response = await fetch(`/api/reports/heatmap?${params}`);
+                const data = await response.json();
+
+                message.innerHTML = '';
+                renderHeatmapSummary(data);
+                renderHeatmapViz(data);
+            } catch (error) {
+                message.innerHTML = `<div style="text-align: center; padding: 40px; color: #ef4444;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
+                    <p>Error loading heatmap</p>
+                    <p class="muted" style="margin-top: 8px;">${error.message}</p>
+                </div>`;
+            }
+        }
+
+        function renderHeatmapSummary(data) {
+            const container = document.getElementById('heatmapSummary');
+
+            const peakDay = data.peak_day || {};
+            const peakHour = data.peak_hour || {};
+            const totalScrobbles = data.total_scrobbles || 0;
+
+            container.innerHTML = `
+                <div class="heatmap-peak-times">
+                    <div class="heatmap-peak">
+                        <div class="heatmap-peak-label">Peak Day</div>
+                        <div class="heatmap-peak-value">${getDayName(peakDay.day_of_week)}</div>
+                        <div class="heatmap-peak-count">${(peakDay.count || 0).toLocaleString()} scrobbles</div>
+                    </div>
+                    <div class="heatmap-peak">
+                        <div class="heatmap-peak-label">Peak Hour</div>
+                        <div class="heatmap-peak-value">${formatHour(peakHour.hour)}</div>
+                        <div class="heatmap-peak-count">${(peakHour.count || 0).toLocaleString()} scrobbles</div>
+                    </div>
+                    <div class="heatmap-peak">
+                        <div class="heatmap-peak-label">Total Scrobbles</div>
+                        <div class="heatmap-peak-value">${totalScrobbles.toLocaleString()}</div>
+                        <div class="heatmap-peak-count">in heatmap</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderHeatmapViz(data) {
+            const container = document.getElementById('heatmapViz');
+            const grid = data.grid || [];
+
+            if (grid.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔥</div><p>No data available</p></div>';
+                return;
+            }
+
+            // Find max value for color scaling
+            const allCounts = grid.flatMap(row => row.hours.map(h => h.count));
+            const maxCount = Math.max(...allCounts);
+
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+            let html = '<div class="section-header"><h3>🔥 Activity Heatmap</h3></div>';
+            html += '<div class="heatmap-grid"><table class="heatmap-table"><thead><tr><th></th>';
+
+            // Hour headers
+            for (let h = 0; h < 24; h++) {
+                html += `<th>${h}h</th>`;
+            }
+            html += '</tr></thead><tbody>';
+
+            // Rows for each day
+            grid.forEach(dayData => {
+                const dayName = days[dayData.day_of_week] || 'Unknown';
+                html += `<tr><td class="heatmap-row-label">${dayName}</td>`;
+
+                dayData.hours.forEach(hourData => {
+                    const intensity = maxCount > 0 ? hourData.count / maxCount : 0;
+                    const color = getHeatmapColor(intensity);
+                    const percentage = data.is_normalized ? `${(hourData.count * 100).toFixed(1)}%` : hourData.count;
+
+                    html += `
+                        <td>
+                            <div class="heatmap-cell"
+                                 style="background: ${color}; color: ${intensity > 0.5 ? '#fff' : 'var(--text)'}"
+                                 title="${dayName} ${hourData.hour}:00 - ${percentage}">
+                                ${hourData.count > 0 ? (data.is_normalized ? Math.round(hourData.count * 100) : hourData.count) : ''}
+                            </div>
+                        </td>
+                    `;
+                });
+
+                html += '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+
+            // Legend
+            html += `
+                <div class="heatmap-legend">
+                    <span class="muted">Activity Level:</span>
+                    <div class="heatmap-legend-item">
+                        <div class="heatmap-legend-box" style="background: ${getHeatmapColor(0)}"></div>
+                        <span class="muted">None</span>
+                    </div>
+                    <div class="heatmap-legend-item">
+                        <div class="heatmap-legend-box" style="background: ${getHeatmapColor(0.25)}"></div>
+                        <span class="muted">Low</span>
+                    </div>
+                    <div class="heatmap-legend-item">
+                        <div class="heatmap-legend-box" style="background: ${getHeatmapColor(0.5)}"></div>
+                        <span class="muted">Medium</span>
+                    </div>
+                    <div class="heatmap-legend-item">
+                        <div class="heatmap-legend-box" style="background: ${getHeatmapColor(0.75)}"></div>
+                        <span class="muted">High</span>
+                    </div>
+                    <div class="heatmap-legend-item">
+                        <div class="heatmap-legend-box" style="background: ${getHeatmapColor(1)}"></div>
+                        <span class="muted">Peak</span>
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        function getHeatmapColor(intensity) {
+            if (intensity === 0) return 'var(--tile)';
+
+            // Color scale from dark blue to bright cyan
+            const colors = [
+                'rgba(125, 211, 252, 0.1)',  // 0-20%
+                'rgba(125, 211, 252, 0.3)',  // 20-40%
+                'rgba(125, 211, 252, 0.5)',  // 40-60%
+                'rgba(125, 211, 252, 0.7)',  // 60-80%
+                'rgba(125, 211, 252, 0.9)',  // 80-100%
+            ];
+
+            const index = Math.min(Math.floor(intensity * 5), 4);
+            return colors[index];
+        }
+
+        function getDayName(dayIndex) {
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            return days[dayIndex] || 'Unknown';
+        }
+
+        function formatHour(hour) {
+            if (hour === 0) return '12 AM';
+            if (hour < 12) return `${hour} AM`;
+            if (hour === 12) return '12 PM';
+            return `${hour - 12} PM`;
+        }
+
+        // Diversity Report Functions
+        async function loadDiversityReport() {
+            const granularity = document.getElementById('diversityGranularity').value;
+            const message = document.getElementById('diversityMessage');
+
+            message.innerHTML = `<div style="text-align: center; padding: 40px;">
+                <div class="loading-spinner" style="margin: 0 auto 12px;"></div>
+                <p class="muted">Analyzing diversity...</p>
+            </div>`;
+
+            try {
+                const params = new URLSearchParams({ granularity });
+
+                if (state.customRange) {
+                    params.append('start', state.customRange.start);
+                    params.append('end', state.customRange.end);
+                }
+
+                const response = await fetch(`/api/reports/diversity?${params}`);
+                const data = await response.json();
+
+                message.innerHTML = '';
+                renderDiversitySummary(data.summary);
+                renderDiversityTimeline(data.timeline);
+            } catch (error) {
+                message.innerHTML = `<div style="text-align: center; padding: 40px; color: #ef4444;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
+                    <p>Error loading diversity report</p>
+                    <p class="muted" style="margin-top: 8px;">${error.message}</p>
+                </div>`;
+            }
+        }
+
+        function renderDiversitySummary(summary) {
+            const container = document.getElementById('diversitySummary');
+
+            container.innerHTML = `
+                <div class="metric-cards">
+                    <div class="metric-card">
+                        <div class="metric-label">Diversity Score</div>
+                        <div class="metric-value">${summary.avg_diversity_score.toFixed(1)}</div>
+                        <div class="metric-subtext">Average (0-100)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Shannon Entropy</div>
+                        <div class="metric-value">${summary.avg_shannon_entropy.toFixed(2)}</div>
+                        <div class="metric-subtext">Average variety</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Gini Coefficient</div>
+                        <div class="metric-value">${summary.avg_gini_coefficient.toFixed(2)}</div>
+                        <div class="metric-subtext">Concentration (0-1)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Unique Artists</div>
+                        <div class="metric-value">${summary.total_unique_artists.toLocaleString()}</div>
+                        <div class="metric-subtext">All time</div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; padding: 16px; background: var(--tile); border-radius: 8px; border: 1px solid var(--border);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="color: var(--muted); font-size: 0.9em;">Most Diverse Period</div>
+                            <div style="font-size: 1.5em; font-weight: 700; color: #22c55e;">${summary.most_diverse_period}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="color: var(--muted); font-size: 0.9em;">Least Diverse Period</div>
+                            <div style="font-size: 1.5em; font-weight: 700; color: #ef4444;">${summary.least_diverse_period}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderDiversityTimeline(timeline) {
+            const container = document.getElementById('diversityTimeline');
+
+            if (timeline.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📊</div><p>No data available</p></div>';
+                return;
+            }
+
+            let html = '<div class="section-header"><h3>📈 Diversity Timeline</h3></div>';
+            html += '<div class="diversity-chart">';
+
+            timeline.forEach(point => {
+                const scorePercent = point.diversity_score;
+
+                html += `
+                    <div class="diversity-bar-container">
+                        <div class="diversity-label">${point.period}</div>
+                        <div class="diversity-bar">
+                            <div class="diversity-bar-fill" style="width: ${scorePercent}%">
+                                ${scorePercent > 20 ? scorePercent.toFixed(1) : ''}
+                            </div>
+                        </div>
+                        <div class="diversity-value">${scorePercent.toFixed(1)}</div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+
+            container.innerHTML = html;
+        }
+
+        // Yearly Report Functions
+        function initYearlyTab() {
+            loadAvailableYears();
+        }
+
+        async function loadAvailableYears() {
+            try {
+                const response = await fetch('/api/years');
+                const years = await response.json();
+
+                if (years.length === 0) {
+                    // No data, use current year as fallback
+                    years.push(new Date().getFullYear());
+                }
+
+                populateYearSelectors(years);
+
+                // Set default to most recent year
+                document.getElementById('yearlyYear').value = years[0];
+                loadYearlyReport();
+            } catch (error) {
+                console.error('Error loading available years:', error);
+                // Fallback to current year
+                const currentYear = new Date().getFullYear();
+                populateYearSelectors([currentYear]);
+                document.getElementById('yearlyYear').value = currentYear;
+                loadYearlyReport();
+            }
+        }
+
+        function populateYearSelectors(years) {
+            const selectors = ['yearlyYear', 'compareYear1', 'compareYear2'];
+            selectors.forEach(id => {
+                const select = document.getElementById(id);
+                select.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+            });
+
+            // Set defaults for comparison
+            if (years.length > 0) {
+                document.getElementById('compareYear1').value = years[0];
+                if (years.length > 1) {
+                    document.getElementById('compareYear2').value = years[1];
+                }
+            }
+        }
+
+        function showComparisonControls() {
+            document.getElementById('yearComparisonControls').style.display = 'block';
+        }
+
+        function hideComparisonControls() {
+            document.getElementById('yearComparisonControls').style.display = 'none';
+            document.getElementById('yearComparisonContent').innerHTML = '';
+        }
+
+        async function loadYearlyReport() {
+            const year = document.getElementById('yearlyYear').value;
+            const message = document.getElementById('yearlyMessage');
+            const content = document.getElementById('yearlyContent');
+
+            message.innerHTML = `<div style="text-align: center; padding: 40px;">
+                <div class="loading-spinner" style="margin: 0 auto 12px;"></div>
+                <p class="muted">Generating your ${year} wrapped...</p>
+            </div>`;
+            content.innerHTML = '';
+            document.getElementById('yearComparisonContent').innerHTML = '';
+
+            try {
+                const response = await fetch(`/api/reports/yearly/${year}`);
+                const data = await response.json();
+
+                message.innerHTML = '';
+                renderYearlyReport(data);
+            } catch (error) {
+                message.innerHTML = `<div style="text-align: center; padding: 40px; color: #ef4444;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
+                    <p>Error loading yearly report</p>
+                    <p class="muted" style="margin-top: 8px;">${error.message}</p>
+                </div>`;
+            }
+        }
+
+        function renderYearlyReport(report) {
+            const container = document.getElementById('yearlyContent');
+
+            if (report.overview.total_scrobbles === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎉</div><p>No data for this year</p></div>';
+                return;
+            }
+
+            const hours = Math.floor(report.overview.total_minutes / 60);
+
+            let html = `
+                <div class="yearly-hero">
+                    <div class="yearly-hero-title">${report.year}</div>
+                    <div class="yearly-hero-subtitle">Your Year in Music 🎵</div>
+                </div>
+
+                <div class="yearly-stats-grid">
+                    <div class="yearly-stat-card">
+                        <div class="yearly-stat-value">${report.overview.total_scrobbles.toLocaleString()}</div>
+                        <div class="yearly-stat-label">Songs Played</div>
+                    </div>
+                    <div class="yearly-stat-card">
+                        <div class="yearly-stat-value">${hours.toLocaleString()}</div>
+                        <div class="yearly-stat-label">Hours Listened</div>
+                    </div>
+                    <div class="yearly-stat-card">
+                        <div class="yearly-stat-value">${report.overview.total_artists.toLocaleString()}</div>
+                        <div class="yearly-stat-label">Artists</div>
+                    </div>
+                    <div class="yearly-stat-card">
+                        <div class="yearly-stat-value">${Math.round(report.overview.average_per_day)}</div>
+                        <div class="yearly-stat-label">Songs per Day</div>
+                    </div>
+                </div>
+            `;
+
+            // Milestones
+            if (report.milestones.length > 0) {
+                html += '<div class="yearly-section">';
+                html += '<div class="yearly-section-title">🏆 Your Milestones</div>';
+                html += '<div class="yearly-milestone-grid">';
+                report.milestones.forEach(milestone => {
+                    html += `
+                        <div class="yearly-milestone">
+                            <div class="yearly-milestone-icon">${milestone.icon}</div>
+                            <div class="yearly-milestone-title">${milestone.title}</div>
+                            <div class="yearly-milestone-desc">${milestone.description}</div>
+                            <div class="yearly-milestone-value">${milestone.value}</div>
+                        </div>
+                    `;
+                });
+                html += '</div></div>';
+            }
+
+            // Top Artists
+            html += '<div class="yearly-section">';
+            html += '<div class="yearly-section-title">🎤 Your Top Artists</div>';
+            html += '<div class="yearly-top-list">';
+            report.top_content.top_artists.slice(0, 10).forEach(artist => {
+                html += `
+                    <div class="yearly-top-item">
+                        <div class="yearly-rank">#${artist.rank}</div>
+                        <div class="yearly-top-info">
+                            <div class="yearly-top-name">${escapeHtml(artist.artist)}</div>
+                            <div class="yearly-top-meta">${artist.percentage.toFixed(1)}% of your listening</div>
+                        </div>
+                        <div class="yearly-top-count">${artist.play_count} plays</div>
+                    </div>
+                `;
+            });
+            html += '</div></div>';
+
+            // Top Tracks
+            html += '<div class="yearly-section">';
+            html += '<div class="yearly-section-title">🎵 Your Top Tracks</div>';
+            html += '<div class="yearly-top-list">';
+            report.top_content.top_tracks.slice(0, 10).forEach(track => {
+                html += `
+                    <div class="yearly-top-item">
+                        <div class="yearly-rank">#${track.rank}</div>
+                        <div class="yearly-top-info">
+                            <div class="yearly-top-name">${escapeHtml(track.track)}</div>
+                            <div class="yearly-top-meta">by ${escapeHtml(track.artist)}</div>
+                        </div>
+                        <div class="yearly-top-count">${track.play_count} plays</div>
+                    </div>
+                `;
+            });
+            html += '</div></div>';
+
+            // Discoveries
+            html += '<div class="yearly-section">';
+            html += '<div class="yearly-section-title">🗺️ New Discoveries</div>';
+            html += `<div style="padding: 20px; background: var(--tile); border-radius: 8px; border: 1px solid var(--border);">`;
+            html += `<div style="font-size: 2em; font-weight: 700; color: var(--accent); margin-bottom: 8px;">
+                ${report.discoveries.new_artists} new artists
+            </div>`;
+            if (report.discoveries.first_artist) {
+                html += `<p class="muted">First discovery: ${escapeHtml(report.discoveries.first_artist.artist)}
+                    on ${new Date(report.discoveries.first_artist.timestamp).toLocaleDateString()}</p>`;
+            }
+            if (report.discoveries.top_discovery) {
+                html += `<p class="muted" style="margin-top: 8px;">Biggest find: ${escapeHtml(report.discoveries.top_discovery.artist)}
+                    (${report.discoveries.top_discovery.plays_this_year} plays)</p>`;
+            }
+            html += `</div></div>`;
+
+            container.innerHTML = html;
+        }
+
+        async function loadYearComparison() {
+            const year1 = parseInt(document.getElementById('compareYear1').value);
+            const year2 = parseInt(document.getElementById('compareYear2').value);
+            const container = document.getElementById('yearComparisonContent');
+
+            container.innerHTML = `<div style="text-align: center; padding: 40px;">
+                <div class="loading-spinner" style="margin: 0 auto 12px;"></div>
+                <p class="muted">Comparing ${year1} vs ${year2}...</p>
+            </div>`;
+
+            try {
+                const response = await fetch(`/api/reports/yearly/${year1}/compare/${year2}`);
+                const data = await response.json();
+
+                renderYearComparison(data);
+            } catch (error) {
+                container.innerHTML = `<div style="text-align: center; padding: 40px; color: #ef4444;">
+                    <p>Error loading comparison</p>
+                </div>`;
+            }
+        }
+
+        function renderYearComparison(comparison) {
+            const container = document.getElementById('yearComparisonContent');
+
+            const scrobblesClass = comparison.scrobbles_change >= 0 ? 'positive' : 'negative';
+            const artistsClass = comparison.artists_change >= 0 ? 'positive' : 'negative';
+            const diversityClass = comparison.diversity_change >= 0 ? 'positive' : 'negative';
+
+            let html = '<div class="section-header"><h3>📊 Year Comparison</h3></div>';
+            html += '<div class="year-comparison">';
+
+            html += `
+                <div class="year-comparison-side">
+                    <div class="year-comparison-year">${comparison.current_year}</div>
+                </div>
+                <div class="year-comparison-vs">VS</div>
+                <div class="year-comparison-side">
+                    <div class="year-comparison-year">${comparison.previous_year}</div>
+                </div>
+            `;
+
+            html += '</div>';
+
+            html += '<div class="year-comparison-stats">';
+            html += `
+                <div class="year-comparison-stat">
+                    <span>Scrobbles</span>
+                    <span class="year-comparison-change ${scrobblesClass}">
+                        ${comparison.scrobbles_change >= 0 ? '+' : ''}${comparison.scrobbles_change.toLocaleString()}
+                        (${comparison.scrobbles_change_percent.toFixed(1)}%)
+                    </span>
+                </div>
+                <div class="year-comparison-stat">
+                    <span>Artists</span>
+                    <span class="year-comparison-change ${artistsClass}">
+                        ${comparison.artists_change >= 0 ? '+' : ''}${comparison.artists_change.toLocaleString()}
+                        (${comparison.artists_change_percent.toFixed(1)}%)
+                    </span>
+                </div>
+                <div class="year-comparison-stat">
+                    <span>Diversity Score</span>
+                    <span class="year-comparison-change ${diversityClass}">
+                        ${comparison.diversity_change >= 0 ? '+' : ''}${comparison.diversity_change.toFixed(1)}
+                    </span>
+                </div>
+            `;
+            html += '</div>';
+
+            if (comparison.top_artists_overlap.length > 0) {
+                html += '<div style="margin-top: 20px; padding: 16px; background: var(--tile); border-radius: 8px; border: 1px solid var(--border);">';
+                html += '<div style="font-weight: 600; margin-bottom: 8px;">🎯 Consistent Favorites</div>';
+                html += '<div style="color: var(--muted);">' + comparison.top_artists_overlap.map(a => escapeHtml(a)).join(', ') + '</div>';
+                html += '</div>';
+            }
+
+            if (comparison.new_favorites.length > 0) {
+                html += '<div style="margin-top: 12px; padding: 16px; background: var(--tile); border-radius: 8px; border: 1px solid var(--border);">';
+                html += '<div style="font-weight: 600; margin-bottom: 8px;">✨ New Favorites</div>';
+                html += '<div style="color: var(--muted);">' + comparison.new_favorites.map(a => escapeHtml(a)).join(', ') + '</div>';
+                html += '</div>';
+            }
+
             container.innerHTML = html;
         }
     </script>

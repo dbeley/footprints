@@ -34,11 +34,7 @@ fn test_session_detection_basic() {
 
 #[test]
 fn test_session_detection_single_track() {
-    let scrobbles = vec![test_scrobble(
-        "2024-01-01T10:00:00Z",
-        "Artist A",
-        "Track 1",
-    )];
+    let scrobbles = vec![test_scrobble("2024-01-01T10:00:00Z", "Artist A", "Track 1")];
 
     let sessions = detect_sessions(scrobbles, 45);
     assert_eq!(sessions.len(), 1);
@@ -82,7 +78,11 @@ fn test_session_unique_artists() {
 #[test]
 fn test_empty_scrobbles() {
     let sessions = detect_sessions(vec![], 45);
-    assert_eq!(sessions.len(), 0, "Empty scrobbles should return no sessions");
+    assert_eq!(
+        sessions.len(),
+        0,
+        "Empty scrobbles should return no sessions"
+    );
 }
 
 #[test]
@@ -134,20 +134,13 @@ fn test_session_gap_information() {
 
 #[test]
 fn test_session_id_format() {
-    let scrobbles = vec![test_scrobble(
-        "2024-01-01T10:00:00Z",
-        "Artist A",
-        "Track 1",
-    )];
+    let scrobbles = vec![test_scrobble("2024-01-01T10:00:00Z", "Artist A", "Track 1")];
 
     let sessions = detect_sessions(scrobbles, 45);
     assert_eq!(sessions.len(), 1);
 
     let timestamp = Utc.with_ymd_and_hms(2024, 1, 1, 10, 0, 0).unwrap();
-    assert_eq!(
-        sessions[0].id,
-        format!("session_{}", timestamp.timestamp())
-    );
+    assert_eq!(sessions[0].id, format!("session_{}", timestamp.timestamp()));
 }
 
 #[test]
@@ -161,7 +154,11 @@ fn test_multiple_sessions_different_days() {
     ];
 
     let sessions = detect_sessions(scrobbles, 45);
-    assert_eq!(sessions.len(), 2, "Should have 2 sessions on different days");
+    assert_eq!(
+        sessions.len(),
+        2,
+        "Should have 2 sessions on different days"
+    );
 }
 
 #[test]

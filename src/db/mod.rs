@@ -606,5 +606,25 @@ pub fn delete_sync_config(pool: &DbPool, id: i64) -> Result<()> {
     Ok(())
 }
 
+/// Get list of years that have scrobbles (sorted descending)
+pub fn get_available_years(pool: &DbPool) -> Result<Vec<i32>> {
+    let conn = pool.get()?;
+
+    let mut stmt = conn.prepare(
+        "SELECT DISTINCT strftime('%Y', datetime(timestamp, 'unixepoch')) as year
+         FROM scrobbles
+         ORDER BY year DESC",
+    )?;
+
+    let years = stmt
+        .query_map([], |row| {
+            let year_str: String = row.get(0)?;
+            Ok(year_str.parse::<i32>().unwrap_or(0))
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(years.into_iter().filter(|&y| y > 0).collect())
+}
+
 #[cfg(test)]
 mod tests;

@@ -4,10 +4,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::db::DbPool;
 
-pub mod sessions;
+pub mod diversity;
 pub mod heatmap;
 pub mod novelty;
+pub mod sessions;
 pub mod transitions;
+pub mod yearly;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Report {

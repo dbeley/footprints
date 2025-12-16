@@ -8,3 +8,6 @@ pub mod importers;
 pub mod models;
 pub mod reports;
 pub mod sync;
+
+#[cfg(test)]
+pub mod test_utils;

@@ -1,5 +1,5 @@
 use anyhow::Result;
-use chrono::{Datelike, DateTime, Timelike, Utc};
+use chrono::{DateTime, Datelike, Timelike, Utc};
 use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -38,11 +38,45 @@ pub struct HourTotal {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct HourData {
+    pub hour: u32,
+    pub count: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DayGrid {
+    pub day_of_week: u32,
+    pub hours: Vec<HourData>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PeakDay {
+    pub day_of_week: u32,
+    pub count: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PeakHour {
+    pub hour: u32,
+    pub count: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct HeatmapReport {
-    pub heatmap: Vec<HeatmapCell>,
-    pub summary: HeatmapSummary,
-    pub weekday_totals: Vec<DayTotal>,
-    pub hour_totals: Vec<HourTotal>,
+    pub grid: Vec<DayGrid>,
+    pub peak_day: PeakDay,
+    pub peak_hour: PeakHour,
+    pub total_scrobbles: i64,
+    pub is_normalized: bool,
+    // Keep old format for backward compatibility
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub heatmap: Option<Vec<HeatmapCell>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary: Option<HeatmapSummary>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub weekday_totals: Option<Vec<DayTotal>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hour_totals: Option<Vec<HourTotal>>,
 }
 
 /// Generate a heatmap showing listening patterns by hour and weekday
@@ -117,7 +151,7 @@ fn build_heatmap_from_scrobbles(
         .iter()
         .max_by_key(|c| c.count)
         .cloned()
-        .unwrap_or_else(|| HeatmapCell {
+        .unwrap_or(HeatmapCell {
             weekday: 0,
             hour: 0,
             count: 0,
@@ -138,7 +172,15 @@ fn build_heatmap_from_scrobbles(
         *weekday_counts.entry(cell.weekday).or_insert(0) += cell.count;
     }
 
-    let weekday_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    let weekday_names = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+    ];
     let mut weekday_totals: Vec<DayTotal> = weekday_counts
         .into_iter()
         .map(|(weekday, count)| DayTotal {
@@ -161,11 +203,57 @@ fn build_heatmap_from_scrobbles(
         .collect();
     hour_totals.sort_by_key(|h| h.hour);
 
+    // Build grid structure for frontend (7 days x 24 hours)
+    let mut grid: Vec<DayGrid> = Vec::new();
+    for weekday in 0..7 {
+        let mut hours: Vec<HourData> = Vec::new();
+        for hour in 0..24 {
+            let count = heatmap
+                .iter()
+                .find(|c| c.weekday == weekday && c.hour == hour)
+                .map(|c| c.count)
+                .unwrap_or(0);
+            hours.push(HourData { hour, count });
+        }
+        grid.push(DayGrid {
+            day_of_week: weekday,
+            hours,
+        });
+    }
+
+    // Find peak day (by total count across all hours)
+    let peak_day = weekday_totals
+        .iter()
+        .max_by_key(|d| d.count)
+        .map(|d| PeakDay {
+            day_of_week: d.weekday,
+            count: d.count,
+        })
+        .unwrap_or(PeakDay {
+            day_of_week: 0,
+            count: 0,
+        });
+
+    // Find peak hour (by total count across all days)
+    let peak_hour = hour_totals
+        .iter()
+        .max_by_key(|h| h.count)
+        .map(|h| PeakHour {
+            hour: h.hour,
+            count: h.count,
+        })
+        .unwrap_or(PeakHour { hour: 0, count: 0 });
+
     Ok(HeatmapReport {
-        heatmap,
-        summary,
-        weekday_totals,
-        hour_totals,
+        grid,
+        peak_day,
+        peak_hour,
+        total_scrobbles: scrobbles.len() as i64,
+        is_normalized: normalize,
+        heatmap: Some(heatmap),
+        summary: Some(summary),
+        weekday_totals: Some(weekday_totals),
+        hour_totals: Some(hour_totals),
     })
 }
 

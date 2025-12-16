@@ -59,14 +59,8 @@ pub fn generate_transitions_report(
     include_self_transitions: bool,
 ) -> Result<TransitionsReport> {
     // Generate sessions first
-    let sessions_report = sessions::generate_sessions_report(
-        pool,
-        start,
-        end,
-        gap_minutes,
-        None,
-        2,
-    )?;
+    let sessions_report =
+        sessions::generate_sessions_report(pool, start, end, gap_minutes, None, 2)?;
 
     // Extract transitions from sessions
     let mut transition_counts: HashMap<(String, String), i64> = HashMap::new();
@@ -146,10 +140,14 @@ fn build_network_graph(
     let mut nodes_map: HashMap<String, i64> = HashMap::new();
 
     for transition in transitions {
-        *nodes_map.entry(transition.from_artist.clone()).or_insert(0) +=
-            artist_counts.get(&transition.from_artist).copied().unwrap_or(0);
-        *nodes_map.entry(transition.to_artist.clone()).or_insert(0) +=
-            artist_counts.get(&transition.to_artist).copied().unwrap_or(0);
+        *nodes_map.entry(transition.from_artist.clone()).or_insert(0) += artist_counts
+            .get(&transition.from_artist)
+            .copied()
+            .unwrap_or(0);
+        *nodes_map.entry(transition.to_artist.clone()).or_insert(0) += artist_counts
+            .get(&transition.to_artist)
+            .copied()
+            .unwrap_or(0);
     }
 
     let nodes: Vec<Node> = nodes_map
@@ -252,7 +250,9 @@ mod tests {
         for i in 0..session.tracks.len() - 1 {
             let from = &session.tracks[i].artist;
             let to = &session.tracks[i + 1].artist;
-            *transition_counts.entry((from.clone(), to.clone())).or_insert(0) += 1;
+            *transition_counts
+                .entry((from.clone(), to.clone()))
+                .or_insert(0) += 1;
         }
 
         assert_eq!(transition_counts.len(), 3);
@@ -277,7 +277,9 @@ mod tests {
             let to = &session.tracks[i + 1].artist;
 
             if from != to {
-                *transition_counts.entry((from.clone(), to.clone())).or_insert(0) += 1;
+                *transition_counts
+                    .entry((from.clone(), to.clone()))
+                    .or_insert(0) += 1;
             }
         }
 
