@@ -1,6 +1,6 @@
 [package]
 name = "footprints"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["footprints contributors"]
 description = "Self-hosted music history manager with stats, reports and charts"
