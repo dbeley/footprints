@@ -94,7 +94,7 @@ pub fn generate_transitions_report(
     let total_transitions: i64 = transition_counts.values().sum();
     let mut transitions: Vec<Transition> = transition_counts
         .iter()
-        .filter(|(_, &count)| count >= min_count)
+        .filter(|&(_, &count)| count >= min_count)
         .map(|((from, to), &count)| Transition {
             from_artist: from.clone(),
             to_artist: to.clone(),
@@ -182,7 +182,7 @@ fn compute_summary(
 
     let most_connected_artist = artist_counts
         .iter()
-        .max_by_key(|(_, &count)| count)
+        .max_by_key(|(_, count)| *count)
         .map(|(artist, _)| artist.clone())
         .unwrap_or_default();
 

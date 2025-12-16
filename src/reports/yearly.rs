@@ -243,7 +243,7 @@ fn compute_overview(scrobbles: &[Scrobble], year: i32) -> YearOverview {
     }
     let most_active_month = month_counts
         .iter()
-        .max_by_key(|(_, &count)| count)
+        .max_by_key(|(_, count)| *count)
         .map(|(month, _)| format!("{}-{:02}", year, month))
         .unwrap_or_default();
 
@@ -255,7 +255,7 @@ fn compute_overview(scrobbles: &[Scrobble], year: i32) -> YearOverview {
     }
     let most_active_day = day_counts
         .iter()
-        .max_by_key(|(_, &count)| count)
+        .max_by_key(|(_, count)| *count)
         .map(|(day, _)| day.clone())
         .unwrap_or_default();
 
@@ -357,8 +357,8 @@ fn compute_listening_patterns(scrobbles: &[Scrobble]) -> ListeningPatterns {
     }
     let peak_hour = hour_counts
         .iter()
-        .max_by_key(|(_, &count)| count)
-        .map(|(&hour, _)| hour)
+        .max_by_key(|(_, count)| *count)
+        .map(|(hour, _)| *hour)
         .unwrap_or(0);
 
     // Day distribution
@@ -370,8 +370,8 @@ fn compute_listening_patterns(scrobbles: &[Scrobble]) -> ListeningPatterns {
     }
     let peak_day = day_counts
         .iter()
-        .max_by_key(|(_, &count)| count)
-        .map(|(&day, _)| day)
+        .max_by_key(|(_, count)| *count)
+        .map(|(day, _)| *day)
         .unwrap_or(0);
 
     // Sessions (simple: gap > 30 min = new session)

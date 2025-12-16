@@ -1,9 +1,9 @@
 use axum::{
+    Router,
     extract::{Path, Query, State},
     http::StatusCode,
     response::{Html, Json},
     routing::{get, post},
-    Router,
 };
 use chrono::{DateTime, Datelike, Duration, Utc};
 use serde::{Deserialize, Serialize};
@@ -553,15 +553,15 @@ async fn get_stats_ui_handler(
             .flatten();
 
         // fallback: use top album cover for this artist
-        if image_url.is_none() {
-            if let Ok(Some(album)) = crate::db::get_top_album_for_artist(&state.pool, &name) {
-                image_url = state
-                    .image_service
-                    .get_image_url(ImageRequest::album(name.clone(), album))
-                    .await
-                    .ok()
-                    .flatten();
-            }
+        if image_url.is_none()
+            && let Ok(Some(album)) = crate::db::get_top_album_for_artist(&state.pool, &name)
+        {
+            image_url = state
+                .image_service
+                .get_image_url(ImageRequest::album(name.clone(), album))
+                .await
+                .ok()
+                .flatten();
         }
         artists_with_images.push(ArtistWithImage {
             name,
@@ -591,15 +591,15 @@ async fn get_stats_ui_handler(
         }
 
         // fallback 2: try the most common album for this track
-        if image_url.is_none() {
-            if let Ok(Some(album)) = crate::db::get_album_for_track(&state.pool, &artist, &track) {
-                image_url = state
-                    .image_service
-                    .get_image_url(ImageRequest::album(artist.clone(), album))
-                    .await
-                    .ok()
-                    .flatten();
-            }
+        if image_url.is_none()
+            && let Ok(Some(album)) = crate::db::get_album_for_track(&state.pool, &artist, &track)
+        {
+            image_url = state
+                .image_service
+                .get_image_url(ImageRequest::album(artist.clone(), album))
+                .await
+                .ok()
+                .flatten();
         }
         tracks_with_images.push(TrackWithImage {
             artist,

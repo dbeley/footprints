@@ -90,41 +90,39 @@ impl SyncScheduler {
                 true
             };
 
-            if should_sync {
-                if let Some(config_id) = config.id {
-                    tracing::info!(
-                        "Starting sync for {} user {}",
-                        config.source,
-                        config.username
-                    );
+            if should_sync && let Some(config_id) = config.id {
+                tracing::info!(
+                    "Starting sync for {} user {}",
+                    config.source,
+                    config.username
+                );
 
-                    match self.sync_config(&config).await {
-                        Ok(count) => {
-                            tracing::info!(
-                                "Synced {} new scrobbles for {} user {}",
-                                count,
-                                config.source,
-                                config.username
-                            );
-                            // Update last sync timestamp
-                            if let Err(e) =
-                                crate::db::update_sync_timestamp(&self.pool, config_id, Utc::now())
-                            {
-                                tracing::error!(
-                                    "Failed to update sync timestamp for config {}: {}",
-                                    config_id,
-                                    e
-                                );
-                            }
-                        }
-                        Err(e) => {
+                match self.sync_config(&config).await {
+                    Ok(count) => {
+                        tracing::info!(
+                            "Synced {} new scrobbles for {} user {}",
+                            count,
+                            config.source,
+                            config.username
+                        );
+                        // Update last sync timestamp
+                        if let Err(e) =
+                            crate::db::update_sync_timestamp(&self.pool, config_id, Utc::now())
+                        {
                             tracing::error!(
-                                "Failed to sync {} user {}: {}",
-                                config.source,
-                                config.username,
+                                "Failed to update sync timestamp for config {}: {}",
+                                config_id,
                                 e
                             );
                         }
+                    }
+                    Err(e) => {
+                        tracing::error!(
+                            "Failed to sync {} user {}: {}",
+                            config.source,
+                            config.username,
+                            e
+                        );
                     }
                 }
             }

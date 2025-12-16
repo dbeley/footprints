@@ -210,26 +210,26 @@ impl LastFmImporter {
                     continue;
                 }
 
-                if let Some(date_info) = &track.date {
-                    if let Ok(timestamp) = date_info.uts.parse::<i64>() {
-                        let mut scrobble = Scrobble::new(
-                            track.artist.text.clone(),
-                            track.name.clone(),
-                            DateTime::from_timestamp(timestamp, 0).unwrap_or_else(Utc::now),
-                            "lastfm".to_string(),
-                        );
+                if let Some(date_info) = &track.date
+                    && let Ok(timestamp) = date_info.uts.parse::<i64>()
+                {
+                    let mut scrobble = Scrobble::new(
+                        track.artist.text.clone(),
+                        track.name.clone(),
+                        DateTime::from_timestamp(timestamp, 0).unwrap_or_else(Utc::now),
+                        "lastfm".to_string(),
+                    );
 
-                        if let Some(album) = &track.album {
-                            if !album.text.is_empty() {
-                                scrobble = scrobble.with_album(album.text.clone());
-                            }
-                        }
-
-                        // Use timestamp as unique identifier for deduplication
-                        scrobble = scrobble.with_source_id(format!("lastfm_{}", timestamp));
-
-                        batch.push(scrobble);
+                    if let Some(album) = &track.album
+                        && !album.text.is_empty()
+                    {
+                        scrobble = scrobble.with_album(album.text.clone());
                     }
+
+                    // Use timestamp as unique identifier for deduplication
+                    scrobble = scrobble.with_source_id(format!("lastfm_{}", timestamp));
+
+                    batch.push(scrobble);
                 }
             }
 
@@ -324,32 +324,32 @@ impl LastFmImporter {
                     continue;
                 }
 
-                if let Some(date_info) = &track.date {
-                    if let Ok(timestamp) = date_info.uts.parse::<i64>() {
-                        // Skip tracks older than or equal to our "since" timestamp
-                        // We use <= because we want only NEW scrobbles after the last sync
-                        if timestamp <= since_timestamp {
-                            continue;
-                        }
-
-                        let mut scrobble = Scrobble::new(
-                            track.artist.text.clone(),
-                            track.name.clone(),
-                            DateTime::from_timestamp(timestamp, 0).unwrap_or_else(Utc::now),
-                            "lastfm".to_string(),
-                        );
-
-                        if let Some(album) = &track.album {
-                            if !album.text.is_empty() {
-                                scrobble = scrobble.with_album(album.text.clone());
-                            }
-                        }
-
-                        // Use timestamp as unique identifier
-                        scrobble = scrobble.with_source_id(format!("lastfm_{}", timestamp));
-
-                        batch.push(scrobble);
+                if let Some(date_info) = &track.date
+                    && let Ok(timestamp) = date_info.uts.parse::<i64>()
+                {
+                    // Skip tracks older than or equal to our "since" timestamp
+                    // We use <= because we want only NEW scrobbles after the last sync
+                    if timestamp <= since_timestamp {
+                        continue;
                     }
+
+                    let mut scrobble = Scrobble::new(
+                        track.artist.text.clone(),
+                        track.name.clone(),
+                        DateTime::from_timestamp(timestamp, 0).unwrap_or_else(Utc::now),
+                        "lastfm".to_string(),
+                    );
+
+                    if let Some(album) = &track.album
+                        && !album.text.is_empty()
+                    {
+                        scrobble = scrobble.with_album(album.text.clone());
+                    }
+
+                    // Use timestamp as unique identifier
+                    scrobble = scrobble.with_source_id(format!("lastfm_{}", timestamp));
+
+                    batch.push(scrobble);
                 }
             }
 
@@ -365,10 +365,9 @@ impl LastFmImporter {
             if let Some(attr) = &data.recenttracks.attr {
                 if let (Ok(current_page), Ok(total_pages)) =
                     (attr.page.parse::<i32>(), attr.total_pages.parse::<i32>())
+                    && current_page >= total_pages
                 {
-                    if current_page >= total_pages {
-                        break;
-                    }
+                    break;
                 }
             } else {
                 break;
