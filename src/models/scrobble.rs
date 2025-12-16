@@ -42,7 +42,7 @@ mod tests {
 
     #[test]
     fn test_scrobble_new() {
-        let timestamp = Utc::now();
+        let timestamp = DateTime::from_timestamp(1640995200, 0).unwrap();
         let scrobble = Scrobble::new(
             "Test Artist".to_string(),
             "Test Track".to_string(),
@@ -61,10 +61,11 @@ mod tests {
 
     #[test]
     fn test_scrobble_with_album() {
+        let timestamp = DateTime::from_timestamp(1640995200, 0).unwrap();
         let scrobble = Scrobble::new(
             "Test Artist".to_string(),
             "Test Track".to_string(),
-            Utc::now(),
+            timestamp,
             "test".to_string(),
         )
         .with_album("Test Album".to_string());
@@ -74,10 +75,11 @@ mod tests {
 
     #[test]
     fn test_scrobble_with_source_id() {
+        let timestamp = DateTime::from_timestamp(1640995200, 0).unwrap();
         let scrobble = Scrobble::new(
             "Test Artist".to_string(),
             "Test Track".to_string(),
-            Utc::now(),
+            timestamp,
             "test".to_string(),
         )
         .with_source_id("12345".to_string());
@@ -87,10 +89,11 @@ mod tests {
 
     #[test]
     fn test_scrobble_builder_chain() {
+        let timestamp = DateTime::from_timestamp(1640995200, 0).unwrap();
         let scrobble = Scrobble::new(
             "Test Artist".to_string(),
             "Test Track".to_string(),
-            Utc::now(),
+            timestamp,
             "lastfm".to_string(),
         )
         .with_album("Test Album".to_string())
