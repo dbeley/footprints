@@ -35,3 +35,69 @@ impl Scrobble {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_scrobble_new() {
+        let timestamp = Utc::now();
+        let scrobble = Scrobble::new(
+            "Test Artist".to_string(),
+            "Test Track".to_string(),
+            timestamp,
+            "test".to_string(),
+        );
+
+        assert_eq!(scrobble.artist, "Test Artist");
+        assert_eq!(scrobble.track, "Test Track");
+        assert_eq!(scrobble.timestamp, timestamp);
+        assert_eq!(scrobble.source, "test");
+        assert!(scrobble.album.is_none());
+        assert!(scrobble.source_id.is_none());
+        assert!(scrobble.id.is_none());
+    }
+
+    #[test]
+    fn test_scrobble_with_album() {
+        let scrobble = Scrobble::new(
+            "Test Artist".to_string(),
+            "Test Track".to_string(),
+            Utc::now(),
+            "test".to_string(),
+        )
+        .with_album("Test Album".to_string());
+
+        assert_eq!(scrobble.album, Some("Test Album".to_string()));
+    }
+
+    #[test]
+    fn test_scrobble_with_source_id() {
+        let scrobble = Scrobble::new(
+            "Test Artist".to_string(),
+            "Test Track".to_string(),
+            Utc::now(),
+            "test".to_string(),
+        )
+        .with_source_id("12345".to_string());
+
+        assert_eq!(scrobble.source_id, Some("12345".to_string()));
+    }
+
+    #[test]
+    fn test_scrobble_builder_chain() {
+        let scrobble = Scrobble::new(
+            "Test Artist".to_string(),
+            "Test Track".to_string(),
+            Utc::now(),
+            "lastfm".to_string(),
+        )
+        .with_album("Test Album".to_string())
+        .with_source_id("67890".to_string());
+
+        assert_eq!(scrobble.album, Some("Test Album".to_string()));
+        assert_eq!(scrobble.source_id, Some("67890".to_string()));
+        assert_eq!(scrobble.source, "lastfm");
+    }
+}

@@ -47,3 +47,58 @@ impl SyncConfig {
         self
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_sync_config_new() {
+        let config = SyncConfig::new("lastfm".to_string(), "testuser".to_string(), 60);
+
+        assert_eq!(config.source, "lastfm");
+        assert_eq!(config.username, "testuser");
+        assert_eq!(config.sync_interval_minutes, 60);
+        assert!(config.enabled);
+        assert!(config.api_key.is_none());
+        assert!(config.token.is_none());
+        assert!(config.id.is_none());
+        assert!(config.last_sync_timestamp.is_none());
+    }
+
+    #[test]
+    fn test_sync_config_with_api_key() {
+        let config = SyncConfig::new("lastfm".to_string(), "testuser".to_string(), 60)
+            .with_api_key("test_api_key".to_string());
+
+        assert_eq!(config.api_key, Some("test_api_key".to_string()));
+    }
+
+    #[test]
+    fn test_sync_config_with_token() {
+        let config = SyncConfig::new("listenbrainz".to_string(), "testuser".to_string(), 60)
+            .with_token("test_token".to_string());
+
+        assert_eq!(config.token, Some("test_token".to_string()));
+    }
+
+    #[test]
+    fn test_sync_config_with_enabled() {
+        let config = SyncConfig::new("lastfm".to_string(), "testuser".to_string(), 60)
+            .with_enabled(false);
+
+        assert!(!config.enabled);
+    }
+
+    #[test]
+    fn test_sync_config_builder_chain() {
+        let config = SyncConfig::new("lastfm".to_string(), "testuser".to_string(), 120)
+            .with_api_key("my_key".to_string())
+            .with_enabled(false);
+
+        assert_eq!(config.source, "lastfm");
+        assert_eq!(config.sync_interval_minutes, 120);
+        assert_eq!(config.api_key, Some("my_key".to_string()));
+        assert!(!config.enabled);
+    }
+}
