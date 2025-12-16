@@ -6,6 +6,14 @@ authors = ["footprints contributors"]
 description = "Self-hosted music history manager with stats, reports and charts"
 license = "MIT"
 
+[lib]
+name = "footprints"
+path = "src/lib.rs"
+
+[[bin]]
+name = "footprints"
+path = "src/main.rs"
+
 [dependencies]
 # Web framework
 axum = "0.7"

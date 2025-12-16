@@ -194,6 +194,49 @@ pub fn get_scrobbles(
     Ok(scrobbles)
 }
 
+pub fn get_scrobbles_in_range(
+    pool: &DbPool,
+    start_date: DateTime<Utc>,
+    end_date: DateTime<Utc>,
+) -> Result<Vec<Scrobble>> {
+    let conn = pool.get()?;
+
+    let mut stmt = conn.prepare(
+        "SELECT id, artist, album, track, timestamp, source, source_id
+         FROM scrobbles
+         WHERE timestamp >= ?1 AND timestamp <= ?2
+         ORDER BY timestamp ASC",
+    )?;
+
+    let scrobbles = stmt
+        .query_map(
+            params![start_date.timestamp(), end_date.timestamp()],
+            |row| {
+                let timestamp_value: i64 = row.get(4)?;
+                let timestamp = DateTime::from_timestamp(timestamp_value, 0).unwrap_or_else(|| {
+                    tracing::warn!(
+                        "Invalid timestamp {} in database for scrobble id {:?}, using current time",
+                        timestamp_value,
+                        row.get::<_, i64>(0).ok()
+                    );
+                    Utc::now()
+                });
+                Ok(Scrobble {
+                    id: Some(row.get(0)?),
+                    artist: row.get(1)?,
+                    album: row.get(2)?,
+                    track: row.get(3)?,
+                    timestamp,
+                    source: row.get(5)?,
+                    source_id: row.get(6)?,
+                })
+            },
+        )?
+        .collect::<Result<Vec<_>, _>>()?;
+
+    Ok(scrobbles)
+}
+
 pub fn get_scrobbles_count(pool: &DbPool) -> Result<i64> {
     let conn = pool.get()?;
     let count: i64 = conn.query_row("SELECT COUNT(*) FROM scrobbles", [], |row| row.get(0))?;

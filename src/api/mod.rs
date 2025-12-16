@@ -78,6 +78,7 @@ pub fn create_router(
         .route("/api/export", get(export_handler))
         .route("/api/reports/:type", get(get_report_handler))
         .route("/api/reports/monthly", get(get_monthly_report_handler))
+        .route("/api/reports/sessions", get(get_sessions_handler))
         .route("/api/timeline", get(get_timeline_handler))
         .with_state(Arc::new(state))
 }
@@ -213,6 +214,55 @@ async fn get_timeline_handler(
 ) -> Result<Json<Vec<crate::models::Scrobble>>, StatusCode> {
     match crate::db::get_scrobbles(&state.pool, params.limit, params.offset) {
         Ok(scrobbles) => Ok(Json(scrobbles)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+#[derive(Deserialize)]
+struct SessionsParams {
+    start: Option<String>,
+    end: Option<String>,
+    #[serde(default = "default_gap_minutes")]
+    gap_minutes: i64,
+    source: Option<String>,
+    #[serde(default = "default_min_tracks")]
+    min_tracks: usize,
+}
+
+fn default_gap_minutes() -> i64 {
+    45
+}
+
+fn default_min_tracks() -> usize {
+    2
+}
+
+async fn get_sessions_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<SessionsParams>,
+) -> Result<Json<reports::sessions::SessionsReport>, StatusCode> {
+    // Parse date strings
+    let start = params
+        .start
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+    
+    let end = params
+        .end
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    match reports::sessions::generate_sessions_report(
+        &state.pool,
+        start,
+        end,
+        params.gap_minutes,
+        params.source,
+        params.min_tracks,
+    ) {
+        Ok(report) => Ok(Json(report)),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
