@@ -114,6 +114,41 @@ LASTFM_API_KEY=your_lastfm_api_key_here
 - `GET /api/reports/{type}` - Get reports (types: `alltime`, `lastmonth`, `2024`, etc.)
 - `POST /api/import` - Import data from Last.fm or ListenBrainz (one-time)
 
+### Reports & Charts
+
+#### Listening Sessions
+Analyze your listening behavior by detecting continuous listening sessions.
+
+- **Endpoint**: `GET /api/reports/sessions`
+- **Parameters**:
+  - `start` (optional): Start date (RFC3339 format, e.g., `2024-01-01T00:00:00Z`)
+  - `end` (optional): End date (RFC3339 format)
+  - `gap_minutes` (optional, default: 45): Inactivity gap threshold (minutes)
+  - `source` (optional): Filter by source (`lastfm` or `listenbrainz`)
+  - `min_tracks` (optional, default: 2): Minimum tracks per session
+- **Returns**: Sessions with duration, track count, unique artists, and distribution statistics
+
+**Example:**
+```bash
+curl "http://localhost:3000/api/reports/sessions?gap_minutes=30&min_tracks=3"
+```
+
+#### Time-of-Day Heatmap
+Discover when you listen to music throughout the week with a 7x24 heatmap.
+
+- **Endpoint**: `GET /api/reports/heatmap`
+- **Parameters**:
+  - `start` (optional): Start date (RFC3339 format)
+  - `end` (optional): End date (RFC3339 format)
+  - `timezone` (optional, default: UTC): IANA timezone (e.g., `America/New_York`, `Europe/London`, `Asia/Tokyo`)
+  - `normalize` (optional, default: false): Normalize counts by number of weeks
+- **Returns**: 168-cell heatmap (7 days × 24 hours), peak times, weekday/hour totals
+
+**Example:**
+```bash
+curl "http://localhost:3000/api/reports/heatmap?timezone=America/New_York&normalize=true"
+```
+
 ### Sync Configuration
 - `POST /api/sync/config` - Create or update a sync configuration
 - `GET /api/sync/config` - Get all sync configurations
