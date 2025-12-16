@@ -80,6 +80,8 @@ pub fn create_router(
         .route("/api/reports/monthly", get(get_monthly_report_handler))
         .route("/api/reports/sessions", get(get_sessions_handler))
         .route("/api/reports/heatmap", get(get_heatmap_handler))
+        .route("/api/reports/novelty", get(get_novelty_handler))
+        .route("/api/reports/transitions", get(get_transitions_handler))
         .route("/api/timeline", get(get_timeline_handler))
         .with_state(Arc::new(state))
 }
@@ -308,6 +310,100 @@ async fn get_heatmap_handler(
         end,
         timezone,
         params.normalize,
+    ) {
+        Ok(report) => Ok(Json(report)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+#[derive(Deserialize)]
+struct NoveltyParams {
+    start: Option<String>,
+    end: Option<String>,
+    #[serde(default = "default_granularity")]
+    granularity: String,
+}
+
+fn default_granularity() -> String {
+    "week".to_string()
+}
+
+async fn get_novelty_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<NoveltyParams>,
+) -> Result<Json<reports::novelty::NoveltyReport>, StatusCode> {
+    // Parse granularity
+    let granularity = match params.granularity.to_lowercase().as_str() {
+        "day" => reports::novelty::Granularity::Day,
+        "week" => reports::novelty::Granularity::Week,
+        "month" => reports::novelty::Granularity::Month,
+        _ => reports::novelty::Granularity::Week,
+    };
+    
+    // Parse date strings
+    let start = params
+        .start
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+    
+    let end = params
+        .end
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    match reports::novelty::generate_novelty_report(
+        &state.pool,
+        start,
+        end,
+        granularity,
+    ) {
+        Ok(report) => Ok(Json(report)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+#[derive(Deserialize)]
+struct TransitionsParams {
+    start: Option<String>,
+    end: Option<String>,
+    #[serde(default = "default_gap_minutes")]
+    gap_minutes: i64,
+    #[serde(default = "default_min_count")]
+    min_count: i64,
+    #[serde(default)]
+    include_self_transitions: bool,
+}
+
+fn default_min_count() -> i64 {
+    2
+}
+
+async fn get_transitions_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<TransitionsParams>,
+) -> Result<Json<reports::transitions::TransitionsReport>, StatusCode> {
+    // Parse date strings
+    let start = params
+        .start
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+    
+    let end = params
+        .end
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    match reports::transitions::generate_transitions_report(
+        &state.pool,
+        start,
+        end,
+        params.gap_minutes,
+        params.min_count,
+        params.include_self_transitions,
     ) {
         Ok(report) => Ok(Json(report)),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),

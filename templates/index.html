@@ -597,6 +597,410 @@
                 grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             }
         }
+
+        /* Novelty & Transitions Features Styles */
+        .feature-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 14px;
+            background: var(--tile);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .feature-controls label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 0.9em;
+            white-space: nowrap;
+        }
+
+        .feature-controls select,
+        .feature-controls input[type="number"] {
+            min-width: 100px;
+        }
+
+        .feature-controls button {
+            margin-left: auto;
+        }
+
+        .metric-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, var(--tile), var(--panel));
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .metric-label {
+            color: var(--muted);
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .metric-subtext {
+            color: var(--muted);
+            font-size: 0.85em;
+            margin-top: 6px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--tile);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            background: var(--panel);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .data-table thead {
+            background: var(--tile);
+        }
+
+        .data-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--accent);
+            border-bottom: 2px solid var(--border);
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table tr:hover {
+            background: rgba(125, 211, 252, 0.05);
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 24px 0 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .section-header h3 {
+            font-size: 1.1em;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-header .badge {
+            background: rgba(125, 211, 252, 0.15);
+            color: var(--accent);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 700;
+        }
+
+        .chart-container {
+            background: var(--tile);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 16px 0;
+            min-height: 300px;
+        }
+
+        .timeline-viz {
+            display: grid;
+            gap: 8px;
+            margin: 16px 0;
+        }
+
+        .timeline-item {
+            display: grid;
+            grid-template-columns: 100px 1fr auto;
+            gap: 12px;
+            align-items: center;
+            padding: 12px;
+            background: var(--tile);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .timeline-item:hover {
+            border-color: var(--accent);
+            transform: translateX(4px);
+        }
+
+        .timeline-period {
+            font-weight: 600;
+            color: var(--accent);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .timeline-bar {
+            height: 24px;
+            background: var(--panel);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .timeline-bar-new {
+            position: absolute;
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #059669);
+            left: 0;
+        }
+
+        .timeline-bar-repeat {
+            position: absolute;
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-strong));
+            right: 0;
+        }
+
+        .timeline-stats {
+            font-size: 0.85em;
+            color: var(--muted);
+            text-align: right;
+            min-width: 80px;
+        }
+
+        .discovery-card {
+            background: var(--tile);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            margin: 8px 0;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 14px;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .discovery-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(125, 211, 252, 0.15);
+        }
+
+        .discovery-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .discovery-info h4 {
+            margin: 0 0 4px;
+            color: var(--text);
+            font-size: 1em;
+        }
+
+        .discovery-meta {
+            color: var(--muted);
+            font-size: 0.85em;
+        }
+
+        .discovery-plays {
+            background: rgba(125, 211, 252, 0.1);
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .discovery-plays-count {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: var(--accent);
+            display: block;
+        }
+
+        .discovery-plays-label {
+            font-size: 0.75em;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        .transition-flow {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: var(--tile);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin: 6px 0;
+            transition: all 0.2s ease;
+        }
+
+        .transition-flow:hover {
+            border-color: var(--accent);
+            background: rgba(125, 211, 252, 0.05);
+        }
+
+        .transition-artist {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .transition-arrow {
+            color: var(--accent);
+            font-size: 1.2em;
+        }
+
+        .transition-count {
+            background: rgba(125, 211, 252, 0.15);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 700;
+            color: var(--accent);
+            font-size: 0.9em;
+        }
+
+        .network-placeholder {
+            background: var(--tile);
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 60px 20px;
+            text-align: center;
+            margin: 16px 0;
+        }
+
+        .network-placeholder-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--muted);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .info-tooltip {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            background: rgba(125, 211, 252, 0.2);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 18px;
+            font-size: 0.75em;
+            color: var(--accent);
+            cursor: help;
+            margin-left: 4px;
+        }
+
+        .comfort-track {
+            background: linear-gradient(135deg, var(--tile), var(--panel));
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            margin: 6px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .comfort-track:hover {
+            border-color: var(--accent);
+            transform: translateX(4px);
+        }
+
+        .comfort-track-info {
+            flex: 1;
+        }
+
+        .comfort-track-name {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .comfort-track-artist {
+            color: var(--muted);
+            font-size: 0.9em;
+        }
+
+        .comfort-track-plays {
+            background: rgba(125, 211, 252, 0.15);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 700;
+            color: var(--accent);
+        }
     </style>
 </head>
 <body>
@@ -615,6 +1019,8 @@
     <div class="tabs" id="tabButtons">
         <button class="tab active" data-tab="overview">Overview</button>
         <button class="tab" data-tab="timeline">Timeline</button>
+        <button class="tab" data-tab="novelty">Novelty</button>
+        <button class="tab" data-tab="transitions">Transitions</button>
         <button class="tab" data-tab="import">Import</button>
     </div>
 
@@ -783,6 +1189,65 @@
                 <button onclick="exportData('json')" id="exportJsonBtn">Export as JSON</button>
                 <button onclick="exportData('csv')" id="exportCsvBtn">Export as CSV</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Novelty Tab -->
+    <div id="novelty" class="tab-content">
+        <div class="panel">
+            <div class="panel-heading">
+                <h2>🆕 Novelty vs. Re-listen</h2>
+                <span class="muted">Track your musical exploration over time</span>
+            </div>
+            
+            <div class="feature-controls">
+                <label>
+                    <span>Granularity:</span>
+                    <select id="noveltyGranularity">
+                        <option value="day">Daily</option>
+                        <option value="week" selected>Weekly</option>
+                        <option value="month">Monthly</option>
+                    </select>
+                </label>
+                <button onclick="loadNoveltyReport()">📊 Generate Report</button>
+            </div>
+            
+            <div id="noveltyMessage"></div>
+            <div id="noveltySummary"></div>
+            <div id="noveltyTimeline"></div>
+            <div id="noveltyDiscoveries"></div>
+            <div id="noveltyComfort"></div>
+        </div>
+    </div>
+
+    <!-- Transitions Tab -->
+    <div id="transitions" class="tab-content">
+        <div class="panel">
+            <div class="panel-heading">
+                <h2>🔀 Artist Transitions</h2>
+                <span class="muted">Discover how artists flow into each other</span>
+            </div>
+            
+            <div class="feature-controls">
+                <label>
+                    <span>Gap (minutes):</span>
+                    <input type="number" id="transitionsGap" value="45" min="5" max="120">
+                </label>
+                <label>
+                    <span>Min count:</span>
+                    <input type="number" id="transitionsMinCount" value="2" min="1" max="10">
+                </label>
+                <label>
+                    <input type="checkbox" id="transitionsSelfTransitions">
+                    <span>Include self-transitions</span>
+                </label>
+                <button onclick="loadTransitionsReport()">🔍 Analyze Transitions</button>
+            </div>
+            
+            <div id="transitionsMessage"></div>
+            <div id="transitionsSummary"></div>
+            <div id="transitionsTop"></div>
+            <div id="transitionsNetwork"></div>
         </div>
     </div>
 
@@ -1358,6 +1823,12 @@
                 loadTimeline(0);
             } else if (tabName === 'import') {
                 loadSyncConfigs();
+            } else if (tabName === 'novelty') {
+                // Auto-load novelty report when tab is opened
+                loadNoveltyReport();
+            } else if (tabName === 'transitions') {
+                // Auto-load transitions report when tab is opened
+                loadTransitionsReport();
             }
         }
 
@@ -1447,6 +1918,294 @@
                 }
             });
         });
+
+        // Novelty Report Functions
+        async function loadNoveltyReport() {
+            const granularity = document.getElementById('noveltyGranularity').value;
+            const message = document.getElementById('noveltyMessage');
+            
+            message.innerHTML = `<div style="text-align: center; padding: 40px;">
+                <div class="loading-spinner" style="margin: 0 auto 12px;"></div>
+                <p class="muted">Analyzing your listening patterns...</p>
+            </div>`;
+            
+            try {
+                const params = new URLSearchParams({ granularity });
+                if (state.customRange) {
+                    params.append('start', state.customRange.start);
+                    params.append('end', state.customRange.end);
+                }
+                
+                const response = await fetch(`/api/reports/novelty?${params}`);
+                const data = await response.json();
+                
+                message.innerHTML = '';
+                renderNoveltySummary(data.summary);
+                renderNoveltyTimeline(data.timeline);
+                renderNoveltyDiscoveries(data.new_artists_discovered);
+                renderNoveltyComfort(data.top_comfort_tracks);
+            } catch (error) {
+                message.innerHTML = `<div style="text-align: center; padding: 40px; color: #ef4444;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
+                    <p>Error loading novelty report</p>
+                    <p class="muted" style="margin-top: 8px;">${error.message}</p>
+                </div>`;
+            }
+        }
+        
+        function renderNoveltySummary(summary) {
+            const container = document.getElementById('noveltySummary');
+            const noveltyPercent = (summary.avg_novelty_ratio * 100).toFixed(1);
+            
+            container.innerHTML = `
+                <div class="metric-cards">
+                    <div class="metric-card">
+                        <div class="metric-label">Avg Novelty Ratio</div>
+                        <div class="metric-value">${noveltyPercent}%</div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${noveltyPercent}%"></div>
+                        </div>
+                        <div class="metric-subtext">New tracks vs. repeats</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Unique Tracks</div>
+                        <div class="metric-value">${summary.total_unique_tracks.toLocaleString()}</div>
+                        <div class="metric-subtext">Discovered songs</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Unique Artists</div>
+                        <div class="metric-value">${summary.total_unique_artists.toLocaleString()}</div>
+                        <div class="metric-subtext">Different artists</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Total Scrobbles</div>
+                        <div class="metric-value">${summary.total_scrobbles.toLocaleString()}</div>
+                        <div class="metric-subtext">Listening sessions</div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin: 16px 0; padding: 12px; background: var(--tile); border-radius: 8px; border: 1px solid var(--border);">
+                    <span style="color: #10b981; font-weight: 600;">🎯 Most exploratory:</span> 
+                    <span style="color: var(--text); margin-right: 20px;">${escapeHtml(summary.most_exploratory_period)}</span>
+                    <span style="color: var(--accent); font-weight: 600;">🔁 Least exploratory:</span> 
+                    <span style="color: var(--text);">${escapeHtml(summary.least_exploratory_period)}</span>
+                </div>
+            `;
+        }
+        
+        function renderNoveltyTimeline(timeline) {
+            const container = document.getElementById('noveltyTimeline');
+            if (timeline.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📊</div><p>No timeline data available</p></div>';
+                return;
+            }
+            
+            let html = '<div class="section-header"><h3>📈 Novelty Timeline <span class="badge">' + timeline.length + ' periods</span></h3></div>';
+            html += '<div class="timeline-viz">';
+            
+            timeline.forEach(point => {
+                const noveltyPercent = (point.novelty_ratio * 100).toFixed(1);
+                const newPercent = point.total_scrobbles > 0 ? (point.new_tracks / point.total_scrobbles * 100) : 0;
+                const repeatPercent = 100 - newPercent;
+                
+                html += `
+                    <div class="timeline-item">
+                        <div class="timeline-period">${escapeHtml(point.period)}</div>
+                        <div class="timeline-bar">
+                            <div class="timeline-bar-new" style="width: ${newPercent}%"></div>
+                            <div class="timeline-bar-repeat" style="width: ${repeatPercent}%"></div>
+                        </div>
+                        <div class="timeline-stats">
+                            <strong>${noveltyPercent}%</strong> new<br>
+                            <span class="muted">${point.total_scrobbles} total</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        function renderNoveltyDiscoveries(discoveries) {
+            const container = document.getElementById('noveltyDiscoveries');
+            if (discoveries.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '<div class="section-header"><h3>✨ New Artists Discovered <span class="badge">' + discoveries.length + '</span></h3></div>';
+            
+            discoveries.slice(0, 20).forEach(disc => {
+                const date = new Date(disc.first_heard);
+                html += `
+                    <div class="discovery-card">
+                        <div class="discovery-icon">🎵</div>
+                        <div class="discovery-info">
+                            <h4>${escapeHtml(disc.artist)}</h4>
+                            <div class="discovery-meta">
+                                First heard: ${date.toLocaleDateString()} • Period: ${escapeHtml(disc.period)}
+                            </div>
+                        </div>
+                        <div class="discovery-plays">
+                            <span class="discovery-plays-count">${disc.total_plays}</span>
+                            <span class="discovery-plays-label">plays</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (discoveries.length > 20) {
+                html += `<div style="text-align: center; margin-top: 12px; color: var(--muted);">
+                    Showing 20 of ${discoveries.length} discoveries
+                </div>`;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function renderNoveltyComfort(comfortTracks) {
+            const container = document.getElementById('noveltyComfort');
+            if (comfortTracks.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let html = '<div class="section-header"><h3>🎧 Top Comfort Tracks <span class="badge">' + comfortTracks.length + '</span></h3></div>';
+            
+            comfortTracks.forEach((track, index) => {
+                html += `
+                    <div class="comfort-track">
+                        <div style="color: var(--accent); font-weight: 700; margin-right: 12px;">#${index + 1}</div>
+                        <div class="comfort-track-info">
+                            <div class="comfort-track-name">${escapeHtml(track.track)}</div>
+                            <div class="comfort-track-artist">${escapeHtml(track.artist)}</div>
+                        </div>
+                        <div class="comfort-track-plays">${track.play_count} plays</div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // Transitions Report Functions
+        async function loadTransitionsReport() {
+            const gapMinutes = document.getElementById('transitionsGap').value;
+            const minCount = document.getElementById('transitionsMinCount').value;
+            const includeSelf = document.getElementById('transitionsSelfTransitions').checked;
+            const message = document.getElementById('transitionsMessage');
+            
+            message.innerHTML = `<div style="text-align: center; padding: 40px;">
+                <div class="loading-spinner" style="margin: 0 auto 12px;"></div>
+                <p class="muted">Analyzing artist transitions...</p>
+            </div>`;
+            
+            try {
+                const params = new URLSearchParams({
+                    gap_minutes: gapMinutes,
+                    min_count: minCount,
+                    include_self_transitions: includeSelf
+                });
+                if (state.customRange) {
+                    params.append('start', state.customRange.start);
+                    params.append('end', state.customRange.end);
+                }
+                
+                const response = await fetch(`/api/reports/transitions?${params}`);
+                const data = await response.json();
+                
+                message.innerHTML = '';
+                renderTransitionsSummary(data.summary);
+                renderTransitionsTop(data.top_transitions);
+                renderTransitionsNetwork(data.network_data);
+            } catch (error) {
+                message.innerHTML = `<div style="text-align: center; padding: 40px; color: #ef4444;">
+                    <div style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
+                    <p>Error loading transitions report</p>
+                    <p class="muted" style="margin-top: 8px;">${error.message}</p>
+                </div>`;
+            }
+        }
+        
+        function renderTransitionsSummary(summary) {
+            const container = document.getElementById('transitionsSummary');
+            const avgTransitions = summary.avg_transitions_per_session ? summary.avg_transitions_per_session.toFixed(1) : '0';
+            
+            container.innerHTML = `
+                <div class="metric-cards">
+                    <div class="metric-card">
+                        <div class="metric-label">Total Transitions</div>
+                        <div class="metric-value">${summary.total_transitions.toLocaleString()}</div>
+                        <div class="metric-subtext">Artist changes</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Unique Transitions</div>
+                        <div class="metric-value">${summary.unique_transitions.toLocaleString()}</div>
+                        <div class="metric-subtext">Different flows</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Most Connected</div>
+                        <div class="metric-value" style="font-size: 1.3em;">${escapeHtml(summary.most_connected_artist || 'N/A')}</div>
+                        <div class="metric-subtext">Hub artist</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">Avg per Session</div>
+                        <div class="metric-value">${avgTransitions}</div>
+                        <div class="metric-subtext">Transitions</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderTransitionsTop(transitions) {
+            const container = document.getElementById('transitionsTop');
+            if (transitions.length === 0) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔀</div><p>No transitions found</p></div>';
+                return;
+            }
+            
+            let html = '<div class="section-header"><h3>🔥 Top Transitions <span class="badge">' + transitions.length + '</span></h3></div>';
+            
+            transitions.slice(0, 30).forEach(trans => {
+                html += `
+                    <div class="transition-flow">
+                        <div class="transition-artist">${escapeHtml(trans.from_artist)}</div>
+                        <div class="transition-arrow">→</div>
+                        <div class="transition-artist">${escapeHtml(trans.to_artist)}</div>
+                        <div class="transition-count">${trans.count}×</div>
+                    </div>
+                `;
+            });
+            
+            if (transitions.length > 30) {
+                html += `<div style="text-align: center; margin-top: 12px; color: var(--muted);">
+                    Showing 30 of ${transitions.length} transitions
+                </div>`;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        function renderTransitionsNetwork(network) {
+            const container = document.getElementById('transitionsNetwork');
+            
+            let html = '<div class="section-header"><h3>🕸️ Network Graph</h3></div>';
+            html += `
+                <div class="network-placeholder">
+                    <div class="network-placeholder-icon">🌐</div>
+                    <h3 style="color: var(--text); margin-bottom: 8px;">Interactive Network Visualization</h3>
+                    <p class="muted" style="margin-bottom: 12px;">
+                        ${network.nodes.length} artists • ${network.edges.length} connections
+                    </p>
+                    <p class="muted">
+                        D3.js force-directed graph coming soon!<br>
+                        This will show how artists connect through your listening patterns.
+                    </p>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+        }
     </script>
 </body>
 </html>

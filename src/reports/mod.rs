@@ -6,6 +6,8 @@ use crate::db::DbPool;
 
 pub mod sessions;
 pub mod heatmap;
+pub mod novelty;
+pub mod transitions;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Report {
