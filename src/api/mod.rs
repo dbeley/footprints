@@ -299,6 +299,7 @@ async fn get_novelty_handler(
         "day" => reports::novelty::Granularity::Day,
         "week" => reports::novelty::Granularity::Week,
         "month" => reports::novelty::Granularity::Month,
+        "year" => reports::novelty::Granularity::Year,
         _ => reports::novelty::Granularity::Week,
     };
 

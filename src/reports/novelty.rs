@@ -46,6 +46,7 @@ pub enum Granularity {
     Day,
     Week,
     Month,
+    Year,
 }
 
 impl Granularity {
@@ -54,6 +55,7 @@ impl Granularity {
             Granularity::Day => dt.format("%Y-%m-%d").to_string(),
             Granularity::Week => dt.format("%Y-W%V").to_string(),
             Granularity::Month => dt.format("%Y-%m").to_string(),
+            Granularity::Year => dt.format("%Y").to_string(),
         }
     }
 }
