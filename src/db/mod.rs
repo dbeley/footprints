@@ -626,5 +626,421 @@ pub fn get_available_years(pool: &DbPool) -> Result<Vec<i32>> {
     Ok(years.into_iter().filter(|&y| y > 0).collect())
 }
 
+// Artist-specific queries
+pub fn get_artist_stats(
+    pool: &DbPool,
+    artist: &str,
+    start_date: Option<DateTime<Utc>>,
+    end_date: Option<DateTime<Utc>>,
+) -> Result<serde_json::Value> {
+    let conn = pool.get()?;
+
+    let (where_clause, mut params_vec) = if let (Some(start), Some(end)) = (start_date, end_date) {
+        (
+            "WHERE artist = ?1 AND timestamp >= ?2 AND timestamp <= ?3",
+            vec![
+                rusqlite::types::Value::Text(artist.to_string()),
+                rusqlite::types::Value::Integer(start.timestamp()),
+                rusqlite::types::Value::Integer(end.timestamp()),
+            ],
+        )
+    } else {
+        (
+            "WHERE artist = ?1",
+            vec![rusqlite::types::Value::Text(artist.to_string())],
+        )
+    };
+
+    let total_scrobbles: i64 = conn.query_row(
+        &format!("SELECT COUNT(*) FROM scrobbles {}", where_clause),
+        rusqlite::params_from_iter(params_vec.iter()),
+        |row| row.get(0),
+    )?;
+
+    let unique_tracks: i64 = conn.query_row(
+        &format!(
+            "SELECT COUNT(DISTINCT track) FROM scrobbles {}",
+            where_clause
+        ),
+        rusqlite::params_from_iter(params_vec.iter()),
+        |row| row.get(0),
+    )?;
+
+    let unique_albums: i64 = conn.query_row(
+        &format!(
+            "SELECT COUNT(DISTINCT album) FROM scrobbles {} AND album IS NOT NULL",
+            where_clause
+        ),
+        rusqlite::params_from_iter(params_vec.iter()),
+        |row| row.get(0),
+    )?;
+
+    let first_scrobble: Option<i64> = conn
+        .query_row(
+            &format!("SELECT MIN(timestamp) FROM scrobbles {}", where_clause),
+            rusqlite::params_from_iter(params_vec.iter()),
+            |row| row.get(0),
+        )
+        .ok();
+
+    let last_scrobble: Option<i64> = conn
+        .query_row(
+            &format!("SELECT MAX(timestamp) FROM scrobbles {}", where_clause),
+            rusqlite::params_from_iter(params_vec.iter()),
+            |row| row.get(0),
+        )
+        .ok();
+
+    Ok(serde_json::json!({
+        "artist": artist,
+        "total_scrobbles": total_scrobbles,
+        "unique_tracks": unique_tracks,
+        "unique_albums": unique_albums,
+        "first_scrobble": first_scrobble,
+        "last_scrobble": last_scrobble,
+    }))
+}
+
+pub fn get_artist_top_tracks(
+    pool: &DbPool,
+    artist: &str,
+    limit: i64,
+    start_date: Option<DateTime<Utc>>,
+    end_date: Option<DateTime<Utc>>,
+) -> Result<Vec<(String, i64)>> {
+    let conn = pool.get()?;
+
+    if let (Some(start), Some(end)) = (start_date, end_date) {
+        let mut stmt = conn.prepare(
+            "SELECT track, COUNT(*) as count FROM scrobbles
+             WHERE artist = ?1 AND timestamp >= ?2 AND timestamp <= ?3
+             GROUP BY track ORDER BY count DESC LIMIT ?4",
+        )?;
+        let rows = stmt.query_map(
+            params![artist, start.timestamp(), end.timestamp(), limit],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    } else {
+        let mut stmt = conn.prepare(
+            "SELECT track, COUNT(*) as count FROM scrobbles
+             WHERE artist = ?1
+             GROUP BY track ORDER BY count DESC LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![artist, limit], |row| Ok((row.get(0)?, row.get(1)?)))?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    }
+}
+
+pub fn get_artist_top_albums(
+    pool: &DbPool,
+    artist: &str,
+    limit: i64,
+    start_date: Option<DateTime<Utc>>,
+    end_date: Option<DateTime<Utc>>,
+) -> Result<Vec<(String, i64)>> {
+    let conn = pool.get()?;
+
+    if let (Some(start), Some(end)) = (start_date, end_date) {
+        let mut stmt = conn.prepare(
+            "SELECT album, COUNT(*) as count FROM scrobbles
+             WHERE artist = ?1 AND album IS NOT NULL AND timestamp >= ?2 AND timestamp <= ?3
+             GROUP BY album ORDER BY count DESC LIMIT ?4",
+        )?;
+        let rows = stmt.query_map(
+            params![artist, start.timestamp(), end.timestamp(), limit],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    } else {
+        let mut stmt = conn.prepare(
+            "SELECT album, COUNT(*) as count FROM scrobbles
+             WHERE artist = ?1 AND album IS NOT NULL
+             GROUP BY album ORDER BY count DESC LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![artist, limit], |row| Ok((row.get(0)?, row.get(1)?)))?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    }
+}
+
+pub fn get_artist_scrobbles_over_time(
+    pool: &DbPool,
+    artist: &str,
+    start_date: Option<DateTime<Utc>>,
+    end_date: Option<DateTime<Utc>>,
+) -> Result<Vec<(String, i64)>> {
+    let conn = pool.get()?;
+
+    let (query, params_list) = if let (Some(start), Some(end)) = (start_date, end_date) {
+        (
+            "SELECT strftime('%Y-%m-%d', datetime(timestamp, 'unixepoch')) as day, COUNT(*) as count
+             FROM scrobbles
+             WHERE artist = ?1 AND timestamp >= ?2 AND timestamp <= ?3
+             GROUP BY day
+             ORDER BY day ASC",
+            params![artist, start.timestamp(), end.timestamp()],
+        )
+    } else {
+        (
+            "SELECT strftime('%Y-%m-%d', datetime(timestamp, 'unixepoch')) as day, COUNT(*) as count
+             FROM scrobbles
+             WHERE artist = ?1
+             GROUP BY day
+             ORDER BY day ASC",
+            params![artist],
+        )
+    };
+
+    let mut stmt = conn.prepare(query)?;
+    let rows = stmt.query_map(params_list, |row| Ok((row.get(0)?, row.get(1)?)))?;
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}
+
+// Album-specific queries
+pub fn get_album_stats(
+    pool: &DbPool,
+    artist: &str,
+    album: &str,
+    start_date: Option<DateTime<Utc>>,
+    end_date: Option<DateTime<Utc>>,
+) -> Result<serde_json::Value> {
+    let conn = pool.get()?;
+
+    let (where_clause, mut params_vec) = if let (Some(start), Some(end)) = (start_date, end_date) {
+        (
+            "WHERE artist = ?1 AND album = ?2 AND timestamp >= ?3 AND timestamp <= ?4",
+            vec![
+                rusqlite::types::Value::Text(artist.to_string()),
+                rusqlite::types::Value::Text(album.to_string()),
+                rusqlite::types::Value::Integer(start.timestamp()),
+                rusqlite::types::Value::Integer(end.timestamp()),
+            ],
+        )
+    } else {
+        (
+            "WHERE artist = ?1 AND album = ?2",
+            vec![
+                rusqlite::types::Value::Text(artist.to_string()),
+                rusqlite::types::Value::Text(album.to_string()),
+            ],
+        )
+    };
+
+    let total_scrobbles: i64 = conn.query_row(
+        &format!("SELECT COUNT(*) FROM scrobbles {}", where_clause),
+        rusqlite::params_from_iter(params_vec.iter()),
+        |row| row.get(0),
+    )?;
+
+    let unique_tracks: i64 = conn.query_row(
+        &format!(
+            "SELECT COUNT(DISTINCT track) FROM scrobbles {}",
+            where_clause
+        ),
+        rusqlite::params_from_iter(params_vec.iter()),
+        |row| row.get(0),
+    )?;
+
+    let first_scrobble: Option<i64> = conn
+        .query_row(
+            &format!("SELECT MIN(timestamp) FROM scrobbles {}", where_clause),
+            rusqlite::params_from_iter(params_vec.iter()),
+            |row| row.get(0),
+        )
+        .ok();
+
+    let last_scrobble: Option<i64> = conn
+        .query_row(
+            &format!("SELECT MAX(timestamp) FROM scrobbles {}", where_clause),
+            rusqlite::params_from_iter(params_vec.iter()),
+            |row| row.get(0),
+        )
+        .ok();
+
+    Ok(serde_json::json!({
+        "artist": artist,
+        "album": album,
+        "total_scrobbles": total_scrobbles,
+        "unique_tracks": unique_tracks,
+        "first_scrobble": first_scrobble,
+        "last_scrobble": last_scrobble,
+    }))
+}
+
+pub fn get_album_tracks(
+    pool: &DbPool,
+    artist: &str,
+    album: &str,
+    start_date: Option<DateTime<Utc>>,
+    end_date: Option<DateTime<Utc>>,
+) -> Result<Vec<(String, i64)>> {
+    let conn = pool.get()?;
+
+    if let (Some(start), Some(end)) = (start_date, end_date) {
+        let mut stmt = conn.prepare(
+            "SELECT track, COUNT(*) as count FROM scrobbles
+             WHERE artist = ?1 AND album = ?2 AND timestamp >= ?3 AND timestamp <= ?4
+             GROUP BY track ORDER BY count DESC",
+        )?;
+        let rows = stmt.query_map(
+            params![artist, album, start.timestamp(), end.timestamp()],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    } else {
+        let mut stmt = conn.prepare(
+            "SELECT track, COUNT(*) as count FROM scrobbles
+             WHERE artist = ?1 AND album = ?2
+             GROUP BY track ORDER BY count DESC",
+        )?;
+        let rows = stmt.query_map(params![artist, album], |row| Ok((row.get(0)?, row.get(1)?)))?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    }
+}
+
+pub fn get_album_scrobbles_over_time(
+    pool: &DbPool,
+    artist: &str,
+    album: &str,
+    start_date: Option<DateTime<Utc>>,
+    end_date: Option<DateTime<Utc>>,
+) -> Result<Vec<(String, i64)>> {
+    let conn = pool.get()?;
+
+    let (query, params_list) = if let (Some(start), Some(end)) = (start_date, end_date) {
+        (
+            "SELECT strftime('%Y-%m-%d', datetime(timestamp, 'unixepoch')) as day, COUNT(*) as count
+             FROM scrobbles
+             WHERE artist = ?1 AND album = ?2 AND timestamp >= ?3 AND timestamp <= ?4
+             GROUP BY day
+             ORDER BY day ASC",
+            params![artist, album, start.timestamp(), end.timestamp()],
+        )
+    } else {
+        (
+            "SELECT strftime('%Y-%m-%d', datetime(timestamp, 'unixepoch')) as day, COUNT(*) as count
+             FROM scrobbles
+             WHERE artist = ?1 AND album = ?2
+             GROUP BY day
+             ORDER BY day ASC",
+            params![artist, album],
+        )
+    };
+
+    let mut stmt = conn.prepare(query)?;
+    let rows = stmt.query_map(params_list, |row| Ok((row.get(0)?, row.get(1)?)))?;
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}
+
+// Track-specific queries
+pub fn get_track_stats(
+    pool: &DbPool,
+    artist: &str,
+    track: &str,
+    start_date: Option<DateTime<Utc>>,
+    end_date: Option<DateTime<Utc>>,
+) -> Result<serde_json::Value> {
+    let conn = pool.get()?;
+
+    let (where_clause, mut params_vec) = if let (Some(start), Some(end)) = (start_date, end_date) {
+        (
+            "WHERE artist = ?1 AND track = ?2 AND timestamp >= ?3 AND timestamp <= ?4",
+            vec![
+                rusqlite::types::Value::Text(artist.to_string()),
+                rusqlite::types::Value::Text(track.to_string()),
+                rusqlite::types::Value::Integer(start.timestamp()),
+                rusqlite::types::Value::Integer(end.timestamp()),
+            ],
+        )
+    } else {
+        (
+            "WHERE artist = ?1 AND track = ?2",
+            vec![
+                rusqlite::types::Value::Text(artist.to_string()),
+                rusqlite::types::Value::Text(track.to_string()),
+            ],
+        )
+    };
+
+    let total_scrobbles: i64 = conn.query_row(
+        &format!("SELECT COUNT(*) FROM scrobbles {}", where_clause),
+        rusqlite::params_from_iter(params_vec.iter()),
+        |row| row.get(0),
+    )?;
+
+    let first_scrobble: Option<i64> = conn
+        .query_row(
+            &format!("SELECT MIN(timestamp) FROM scrobbles {}", where_clause),
+            rusqlite::params_from_iter(params_vec.iter()),
+            |row| row.get(0),
+        )
+        .ok();
+
+    let last_scrobble: Option<i64> = conn
+        .query_row(
+            &format!("SELECT MAX(timestamp) FROM scrobbles {}", where_clause),
+            rusqlite::params_from_iter(params_vec.iter()),
+            |row| row.get(0),
+        )
+        .ok();
+
+    // Get most common album for this track
+    let album: Option<String> = conn
+        .query_row(
+            &format!(
+                "SELECT album, COUNT(*) as count FROM scrobbles {}
+                 AND album IS NOT NULL
+                 GROUP BY album ORDER BY count DESC LIMIT 1",
+                where_clause
+            ),
+            rusqlite::params_from_iter(params_vec.iter()),
+            |row| row.get(0),
+        )
+        .ok();
+
+    Ok(serde_json::json!({
+        "artist": artist,
+        "track": track,
+        "album": album,
+        "total_scrobbles": total_scrobbles,
+        "first_scrobble": first_scrobble,
+        "last_scrobble": last_scrobble,
+    }))
+}
+
+pub fn get_track_scrobbles_over_time(
+    pool: &DbPool,
+    artist: &str,
+    track: &str,
+    start_date: Option<DateTime<Utc>>,
+    end_date: Option<DateTime<Utc>>,
+) -> Result<Vec<(String, i64)>> {
+    let conn = pool.get()?;
+
+    let (query, params_list) = if let (Some(start), Some(end)) = (start_date, end_date) {
+        (
+            "SELECT strftime('%Y-%m-%d', datetime(timestamp, 'unixepoch')) as day, COUNT(*) as count
+             FROM scrobbles
+             WHERE artist = ?1 AND track = ?2 AND timestamp >= ?3 AND timestamp <= ?4
+             GROUP BY day
+             ORDER BY day ASC",
+            params![artist, track, start.timestamp(), end.timestamp()],
+        )
+    } else {
+        (
+            "SELECT strftime('%Y-%m-%d', datetime(timestamp, 'unixepoch')) as day, COUNT(*) as count
+             FROM scrobbles
+             WHERE artist = ?1 AND track = ?2
+             GROUP BY day
+             ORDER BY day ASC",
+            params![artist, track],
+        )
+    };
+
+    let mut stmt = conn.prepare(query)?;
+    let rows = stmt.query_map(params_list, |row| Ok((row.get(0)?, row.get(1)?)))?;
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
+}
+
 #[cfg(test)]
 mod tests;

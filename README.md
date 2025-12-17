@@ -6,6 +6,7 @@ Self-hosted music history manager with stats, reports and charts, inspired by [m
 
 - 📊 **Statistics & Analytics**: Track your listening habits with detailed stats
 - 📈 **Charts & Reports**: View yearly, monthly, and all-time reports
+- 🎤 **Entity Detail Pages**: In-depth artist, album, and track pages with stats and charts
 - 📅 **Timeline**: Browse your complete listening history
 - 🔄 **Multi-source Import**: Import from Last.fm and ListenBrainz
 - 🚫 **Deduplication**: Automatic prevention of duplicate scrobbles

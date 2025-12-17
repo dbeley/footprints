@@ -90,6 +90,9 @@ pub fn create_router(
             get(get_year_comparison_handler),
         )
         .route("/api/timeline", get(get_timeline_handler))
+        .route("/api/artist/:artist", get(get_artist_handler))
+        .route("/api/album/:artist/:album", get(get_album_handler))
+        .route("/api/track/:artist/:track", get(get_track_handler))
         .with_state(Arc::new(state))
 }
 
@@ -953,4 +956,241 @@ fn escape_csv(s: &str) -> String {
     } else {
         s.to_string()
     }
+}
+
+// Entity detail handlers
+#[derive(Deserialize)]
+struct EntityParams {
+    start: Option<String>,
+    end: Option<String>,
+}
+
+#[derive(Serialize)]
+struct ArtistDetail {
+    stats: serde_json::Value,
+    top_tracks: Vec<TrackItem>,
+    top_albums: Vec<AlbumItem>,
+    scrobbles_over_time: Vec<TimePoint>,
+    image_url: Option<String>,
+}
+
+#[derive(Serialize)]
+struct TrackItem {
+    name: String,
+    count: i64,
+}
+
+#[derive(Serialize)]
+struct AlbumItem {
+    name: String,
+    count: i64,
+    image_url: Option<String>,
+}
+
+#[derive(Serialize)]
+struct TimePoint {
+    date: String,
+    count: i64,
+}
+
+#[derive(Serialize)]
+struct AlbumDetail {
+    stats: serde_json::Value,
+    tracks: Vec<TrackItem>,
+    scrobbles_over_time: Vec<TimePoint>,
+    image_url: Option<String>,
+}
+
+#[derive(Serialize)]
+struct TrackDetail {
+    stats: serde_json::Value,
+    scrobbles_over_time: Vec<TimePoint>,
+    image_url: Option<String>,
+}
+
+async fn get_artist_handler(
+    State(state): State<Arc<AppState>>,
+    Path(artist): Path<String>,
+    Query(params): Query<EntityParams>,
+) -> Result<Json<ArtistDetail>, StatusCode> {
+    let start = params
+        .start
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    let end = params
+        .end
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    let stats = crate::db::get_artist_stats(&state.pool, &artist, start, end)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let top_tracks = crate::db::get_artist_top_tracks(&state.pool, &artist, 20, start, end)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .into_iter()
+        .map(|(name, count)| TrackItem { name, count })
+        .collect();
+
+    let top_albums_data = crate::db::get_artist_top_albums(&state.pool, &artist, 20, start, end)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let mut top_albums = Vec::new();
+    for (name, count) in top_albums_data {
+        let image_url = state
+            .image_service
+            .get_image_url(ImageRequest::album(artist.clone(), name.clone()))
+            .await
+            .ok()
+            .flatten();
+        top_albums.push(AlbumItem {
+            name,
+            count,
+            image_url,
+        });
+    }
+
+    let scrobbles_over_time =
+        crate::db::get_artist_scrobbles_over_time(&state.pool, &artist, start, end)
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+            .into_iter()
+            .map(|(date, count)| TimePoint { date, count })
+            .collect();
+
+    let mut image_url = state
+        .image_service
+        .get_image_url(ImageRequest::artist(artist.clone()))
+        .await
+        .ok()
+        .flatten();
+
+    if image_url.is_none()
+        && let Ok(Some(album)) = crate::db::get_top_album_for_artist(&state.pool, &artist)
+    {
+        image_url = state
+            .image_service
+            .get_image_url(ImageRequest::album(artist.clone(), album))
+            .await
+            .ok()
+            .flatten();
+    }
+
+    Ok(Json(ArtistDetail {
+        stats,
+        top_tracks,
+        top_albums,
+        scrobbles_over_time,
+        image_url,
+    }))
+}
+
+async fn get_album_handler(
+    State(state): State<Arc<AppState>>,
+    Path((artist, album)): Path<(String, String)>,
+    Query(params): Query<EntityParams>,
+) -> Result<Json<AlbumDetail>, StatusCode> {
+    let start = params
+        .start
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    let end = params
+        .end
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    let stats = crate::db::get_album_stats(&state.pool, &artist, &album, start, end)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let tracks = crate::db::get_album_tracks(&state.pool, &artist, &album, start, end)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .into_iter()
+        .map(|(name, count)| TrackItem { name, count })
+        .collect();
+
+    let scrobbles_over_time =
+        crate::db::get_album_scrobbles_over_time(&state.pool, &artist, &album, start, end)
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+            .into_iter()
+            .map(|(date, count)| TimePoint { date, count })
+            .collect();
+
+    let image_url = state
+        .image_service
+        .get_image_url(ImageRequest::album(artist.clone(), album.clone()))
+        .await
+        .ok()
+        .flatten();
+
+    Ok(Json(AlbumDetail {
+        stats,
+        tracks,
+        scrobbles_over_time,
+        image_url,
+    }))
+}
+
+async fn get_track_handler(
+    State(state): State<Arc<AppState>>,
+    Path((artist, track)): Path<(String, String)>,
+    Query(params): Query<EntityParams>,
+) -> Result<Json<TrackDetail>, StatusCode> {
+    let start = params
+        .start
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    let end = params
+        .end
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    let stats = crate::db::get_track_stats(&state.pool, &artist, &track, start, end)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let scrobbles_over_time =
+        crate::db::get_track_scrobbles_over_time(&state.pool, &artist, &track, start, end)
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+            .into_iter()
+            .map(|(date, count)| TimePoint { date, count })
+            .collect();
+
+    let mut image_url = state
+        .image_service
+        .get_image_url(ImageRequest::track(artist.clone(), track.clone()))
+        .await
+        .ok()
+        .flatten();
+
+    if image_url.is_none() {
+        image_url = state
+            .image_service
+            .get_image_url(ImageRequest::artist(artist.clone()))
+            .await
+            .ok()
+            .flatten();
+    }
+
+    if image_url.is_none()
+        && let Ok(Some(album)) = crate::db::get_album_for_track(&state.pool, &artist, &track)
+    {
+        image_url = state
+            .image_service
+            .get_image_url(ImageRequest::album(artist.clone(), album))
+            .await
+            .ok()
+            .flatten();
+    }
+
+    Ok(Json(TrackDetail {
+        stats,
+        scrobbles_over_time,
+        image_url,
+    }))
 }
