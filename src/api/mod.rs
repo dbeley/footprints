@@ -79,16 +79,11 @@ pub fn create_router(
         .route("/api/export", get(export_handler))
         .route("/api/reports/:type", get(get_report_handler))
         .route("/api/reports/monthly", get(get_monthly_report_handler))
-        .route("/api/reports/sessions", get(get_sessions_handler))
         .route("/api/reports/heatmap", get(get_heatmap_handler))
         .route("/api/reports/novelty", get(get_novelty_handler))
         .route("/api/reports/transitions", get(get_transitions_handler))
         .route("/api/reports/diversity", get(get_diversity_handler))
         .route("/api/reports/yearly/:year", get(get_yearly_handler))
-        .route(
-            "/api/reports/yearly/:year/compare/:year2",
-            get(get_year_comparison_handler),
-        )
         .route("/api/timeline", get(get_timeline_handler))
         .route("/api/artist/:artist", get(get_artist_handler))
         .route("/api/album/:artist/:album", get(get_album_handler))
@@ -241,55 +236,6 @@ async fn get_timeline_handler(
 }
 
 #[derive(Deserialize)]
-struct SessionsParams {
-    start: Option<String>,
-    end: Option<String>,
-    #[serde(default = "default_gap_minutes")]
-    gap_minutes: i64,
-    source: Option<String>,
-    #[serde(default = "default_min_tracks")]
-    min_tracks: usize,
-}
-
-fn default_gap_minutes() -> i64 {
-    45
-}
-
-fn default_min_tracks() -> usize {
-    2
-}
-
-async fn get_sessions_handler(
-    State(state): State<Arc<AppState>>,
-    Query(params): Query<SessionsParams>,
-) -> Result<Json<reports::sessions::SessionsReport>, StatusCode> {
-    // Parse date strings
-    let start = params
-        .start
-        .as_deref()
-        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
-        .map(|dt| dt.with_timezone(&Utc));
-
-    let end = params
-        .end
-        .as_deref()
-        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
-        .map(|dt| dt.with_timezone(&Utc));
-
-    match reports::sessions::generate_sessions_report(
-        &state.pool,
-        start,
-        end,
-        params.gap_minutes,
-        params.source,
-        params.min_tracks,
-    ) {
-        Ok(report) => Ok(Json(report)),
-        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
-    }
-}
-
-#[derive(Deserialize)]
 struct HeatmapParams {
     start: Option<String>,
     end: Option<String>,
@@ -387,6 +333,10 @@ struct TransitionsParams {
     include_self_transitions: bool,
 }
 
+fn default_gap_minutes() -> i64 {
+    45
+}
+
 fn default_min_count() -> i64 {
     2
 }
@@ -464,16 +414,6 @@ async fn get_yearly_handler(
 ) -> Result<Json<reports::yearly::YearlyReport>, StatusCode> {
     match reports::yearly::generate_yearly_report(&state.pool, year) {
         Ok(report) => Ok(Json(report)),
-        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
-    }
-}
-
-async fn get_year_comparison_handler(
-    State(state): State<Arc<AppState>>,
-    Path((year1, year2)): Path<(i32, i32)>,
-) -> Result<Json<reports::yearly::YearComparison>, StatusCode> {
-    match reports::yearly::generate_year_comparison(&state.pool, year1, year2) {
-        Ok(comparison) => Ok(Json(comparison)),
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }

@@ -7,7 +7,6 @@ use crate::db::DbPool;
 pub mod diversity;
 pub mod heatmap;
 pub mod novelty;
-pub mod sessions;
 pub mod transitions;
 pub mod yearly;
 

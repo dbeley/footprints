@@ -1,5 +1,4 @@
 use crate::db::DbPool;
-use crate::reports::sessions;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -58,37 +57,78 @@ pub fn generate_transitions_report(
     min_count: i64,
     include_self_transitions: bool,
 ) -> Result<TransitionsReport> {
-    // Generate sessions first
-    let sessions_report =
-        sessions::generate_sessions_report(pool, start, end, gap_minutes, None, 2)?;
+    // Get scrobbles from database
+    let scrobbles = if let (Some(s), Some(e)) = (start, end) {
+        crate::db::get_scrobbles_in_range(pool, s, e)?
+    } else {
+        crate::db::get_scrobbles(pool, Some(1_000_000), Some(0))?
+    };
 
-    // Extract transitions from sessions
+    // Extract transitions directly from scrobbles
     let mut transition_counts: HashMap<(String, String), i64> = HashMap::new();
     let mut artist_counts: HashMap<String, i64> = HashMap::new();
+    let mut session_count = 0;
 
-    for session in &sessions_report.sessions {
-        for i in 0..session.tracks.len().saturating_sub(1) {
-            let from = &session.tracks[i].artist;
-            let to = &session.tracks[i + 1].artist;
+    if scrobbles.is_empty() {
+        return Ok(TransitionsReport {
+            transitions: vec![],
+            top_transitions: vec![],
+            network_data: NetworkGraph {
+                nodes: vec![],
+                edges: vec![],
+            },
+            summary: TransitionsSummary {
+                total_transitions: 0,
+                unique_transitions: 0,
+                most_common_transition: None,
+                most_connected_artist: String::new(),
+                avg_transitions_per_session: 0.0,
+            },
+        });
+    }
+
+    // Process scrobbles and detect transitions based on gap
+    let mut prev_scrobble = &scrobbles[0];
+    let mut current_session_has_transition = false;
+
+    for curr_scrobble in scrobbles.iter().skip(1) {
+        // Calculate gap between consecutive scrobbles in minutes
+        let gap = (curr_scrobble.timestamp - prev_scrobble.timestamp).num_minutes();
+
+        // If gap is too large, start a new session
+        if gap > gap_minutes {
+            if current_session_has_transition {
+                session_count += 1;
+            }
+            current_session_has_transition = false;
+        } else {
+            // Within same session, count transition
+            let from = &prev_scrobble.artist;
+            let to = &curr_scrobble.artist;
 
             // Skip self-transitions if not requested
-            if !include_self_transitions && from == to {
-                continue;
+            if include_self_transitions || from != to {
+                let key = (from.clone(), to.clone());
+                *transition_counts.entry(key).or_insert(0) += 1;
+                current_session_has_transition = true;
+
+                // Count artist appearances
+                *artist_counts.entry(from.clone()).or_insert(0) += 1;
             }
-
-            // Count transitions
-            let key = (from.clone(), to.clone());
-            *transition_counts.entry(key).or_insert(0) += 1;
-
-            // Count artist appearances
-            *artist_counts.entry(from.clone()).or_insert(0) += 1;
         }
 
-        // Count last artist
-        if let Some(last_track) = session.tracks.last() {
-            *artist_counts.entry(last_track.artist.clone()).or_insert(0) += 1;
-        }
+        prev_scrobble = curr_scrobble;
     }
+
+    // Count last session if it had transitions
+    if current_session_has_transition {
+        session_count += 1;
+    }
+
+    // Count last artist
+    *artist_counts
+        .entry(scrobbles.last().unwrap().artist.clone())
+        .or_insert(0) += 1;
 
     // Build transitions list
     let total_transitions: i64 = transition_counts.values().sum();
@@ -120,7 +160,7 @@ pub fn generate_transitions_report(
     let summary = compute_summary(
         &transitions,
         &artist_counts,
-        &sessions_report.sessions,
+        session_count,
         total_transitions,
     );
 
@@ -175,7 +215,7 @@ fn build_network_graph(
 fn compute_summary(
     transitions: &[Transition],
     artist_counts: &HashMap<String, i64>,
-    sessions: &[sessions::Session],
+    session_count: usize,
     total_transitions: i64,
 ) -> TransitionsSummary {
     let most_common_transition = transitions.first().cloned();
@@ -186,8 +226,8 @@ fn compute_summary(
         .map(|(artist, _)| artist.clone())
         .unwrap_or_default();
 
-    let avg_transitions_per_session = if !sessions.is_empty() {
-        total_transitions as f64 / sessions.len() as f64
+    let avg_transitions_per_session = if session_count > 0 {
+        total_transitions as f64 / session_count as f64
     } else {
         0.0
     };
@@ -204,55 +244,17 @@ fn compute_summary(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::reports::sessions::{Session, SessionTrack};
-    use chrono::Utc;
-
-    fn test_session(tracks: Vec<(&str, &str)>) -> Session {
-        let start_time = Utc::now();
-        let session_tracks: Vec<SessionTrack> = tracks
-            .iter()
-            .enumerate()
-            .map(|(i, (artist, track))| SessionTrack {
-                artist: artist.to_string(),
-                album: None,
-                track: track.to_string(),
-                timestamp: start_time + chrono::Duration::minutes(i as i64 * 5),
-                gap_after_minutes: Some(5),
-            })
-            .collect();
-
-        Session {
-            id: "test_session".to_string(),
-            start_time,
-            end_time: start_time + chrono::Duration::minutes(tracks.len() as i64 * 5),
-            duration_minutes: tracks.len() as i64 * 5,
-            track_count: tracks.len(),
-            unique_artists: tracks
-                .iter()
-                .map(|(a, _)| a.to_string())
-                .collect::<std::collections::HashSet<_>>()
-                .len(),
-            tracks: session_tracks,
-        }
-    }
 
     #[test]
     fn test_transition_extraction() {
-        let session = test_session(vec![
-            ("Artist A", "Track 1"),
-            ("Artist B", "Track 2"),
-            ("Artist C", "Track 3"),
-            ("Artist A", "Track 4"),
-        ]);
-
         let mut transition_counts: HashMap<(String, String), i64> = HashMap::new();
 
-        for i in 0..session.tracks.len() - 1 {
-            let from = &session.tracks[i].artist;
-            let to = &session.tracks[i + 1].artist;
-            *transition_counts
-                .entry((from.clone(), to.clone()))
-                .or_insert(0) += 1;
+        let artists = ["Artist A", "Artist B", "Artist C", "Artist A"];
+
+        for i in 0..artists.len() - 1 {
+            let from = artists[i].to_string();
+            let to = artists[i + 1].to_string();
+            *transition_counts.entry((from, to)).or_insert(0) += 1;
         }
 
         assert_eq!(transition_counts.len(), 3);
@@ -264,21 +266,17 @@ mod tests {
 
     #[test]
     fn test_self_transitions_excluded() {
-        let session = test_session(vec![
-            ("Artist A", "Track 1"),
-            ("Artist A", "Track 2"), // Self-transition
-            ("Artist B", "Track 3"),
-        ]);
-
         let mut transition_counts: HashMap<(String, String), i64> = HashMap::new();
 
-        for i in 0..session.tracks.len() - 1 {
-            let from = &session.tracks[i].artist;
-            let to = &session.tracks[i + 1].artist;
+        let artists = ["Artist A", "Artist A", "Artist B"];
+
+        for i in 0..artists.len() - 1 {
+            let from = artists[i];
+            let to = artists[i + 1];
 
             if from != to {
                 *transition_counts
-                    .entry((from.clone(), to.clone()))
+                    .entry((from.to_string(), to.to_string()))
                     .or_insert(0) += 1;
             }
         }

@@ -635,7 +635,7 @@ pub fn get_artist_stats(
 ) -> Result<serde_json::Value> {
     let conn = pool.get()?;
 
-    let (where_clause, mut params_vec) = if let (Some(start), Some(end)) = (start_date, end_date) {
+    let (where_clause, params_vec) = if let (Some(start), Some(end)) = (start_date, end_date) {
         (
             "WHERE artist = ?1 AND timestamp >= ?2 AND timestamp <= ?3",
             vec![
@@ -806,7 +806,7 @@ pub fn get_album_stats(
 ) -> Result<serde_json::Value> {
     let conn = pool.get()?;
 
-    let (where_clause, mut params_vec) = if let (Some(start), Some(end)) = (start_date, end_date) {
+    let (where_clause, params_vec) = if let (Some(start), Some(end)) = (start_date, end_date) {
         (
             "WHERE artist = ?1 AND album = ?2 AND timestamp >= ?3 AND timestamp <= ?4",
             vec![
@@ -942,7 +942,7 @@ pub fn get_track_stats(
 ) -> Result<serde_json::Value> {
     let conn = pool.get()?;
 
-    let (where_clause, mut params_vec) = if let (Some(start), Some(end)) = (start_date, end_date) {
+    let (where_clause, params_vec) = if let (Some(start), Some(end)) = (start_date, end_date) {
         (
             "WHERE artist = ?1 AND track = ?2 AND timestamp >= ?3 AND timestamp <= ?4",
             vec![

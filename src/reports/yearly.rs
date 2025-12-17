@@ -108,20 +108,6 @@ pub struct Milestone {
     pub icon: String,
 }
 
-/// Generate year-over-year comparison
-#[derive(Debug, Serialize, Deserialize)]
-pub struct YearComparison {
-    pub current_year: i32,
-    pub previous_year: i32,
-    pub scrobbles_change: i64,
-    pub scrobbles_change_percent: f64,
-    pub artists_change: i64,
-    pub artists_change_percent: f64,
-    pub diversity_change: f64,
-    pub top_artists_overlap: Vec<String>,
-    pub new_favorites: Vec<String>,
-}
-
 pub fn generate_yearly_report(pool: &DbPool, year: i32) -> Result<YearlyReport> {
     let start = format!("{}-01-01T00:00:00Z", year).parse()?;
     let end = format!("{}-12-31T23:59:59Z", year).parse()?;
@@ -147,68 +133,6 @@ pub fn generate_yearly_report(pool: &DbPool, year: i32) -> Result<YearlyReport> 
         discoveries,
         diversity,
         milestones,
-    })
-}
-
-pub fn generate_year_comparison(pool: &DbPool, year1: i32, year2: i32) -> Result<YearComparison> {
-    let report1 = generate_yearly_report(pool, year1)?;
-    let report2 = generate_yearly_report(pool, year2)?;
-
-    let scrobbles_change = report1.overview.total_scrobbles - report2.overview.total_scrobbles;
-    let scrobbles_change_percent = if report2.overview.total_scrobbles > 0 {
-        (scrobbles_change as f64 / report2.overview.total_scrobbles as f64) * 100.0
-    } else {
-        0.0
-    };
-
-    let artists_change = report1.overview.total_artists - report2.overview.total_artists;
-    let artists_change_percent = if report2.overview.total_artists > 0 {
-        (artists_change as f64 / report2.overview.total_artists as f64) * 100.0
-    } else {
-        0.0
-    };
-
-    let diversity_change = report1.diversity.diversity_score - report2.diversity.diversity_score;
-
-    // Find top artists overlap
-    let top1: Vec<String> = report1
-        .top_content
-        .top_artists
-        .iter()
-        .take(10)
-        .map(|a| a.artist.clone())
-        .collect();
-
-    let top2_set: std::collections::HashSet<String> = report2
-        .top_content
-        .top_artists
-        .iter()
-        .take(10)
-        .map(|a| a.artist.clone())
-        .collect();
-
-    let overlap: Vec<String> = top1
-        .iter()
-        .filter(|a| top2_set.contains(*a))
-        .cloned()
-        .collect();
-
-    let new_favorites: Vec<String> = top1
-        .iter()
-        .filter(|a| !top2_set.contains(*a))
-        .cloned()
-        .collect();
-
-    Ok(YearComparison {
-        current_year: year1,
-        previous_year: year2,
-        scrobbles_change,
-        scrobbles_change_percent,
-        artists_change,
-        artists_change_percent,
-        diversity_change,
-        top_artists_overlap: overlap,
-        new_favorites,
     })
 }
 
