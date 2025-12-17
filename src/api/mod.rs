@@ -61,6 +61,8 @@ pub fn create_router(
 
     Router::new()
         .route("/", get(root_handler))
+        .route("/styles.css", get(styles_handler))
+        .route("/scripts.js", get(scripts_handler))
         .route("/api/scrobbles", get(get_scrobbles_handler))
         .route("/api/stats", get(get_stats_handler))
         .route("/api/stats/ui", get(get_stats_ui_handler))
@@ -93,6 +95,32 @@ pub fn create_router(
 
 async fn root_handler() -> Html<String> {
     Html(include_str!("../../templates/index.html").to_string())
+}
+
+async fn styles_handler() -> axum::response::Response {
+    use axum::body::Body;
+    use axum::http::header;
+    use axum::response::Response;
+
+    Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, "text/css; charset=utf-8")
+        .header(header::CACHE_CONTROL, "public, max-age=3600")
+        .body(Body::from(include_str!("../../templates/styles.css")))
+        .unwrap()
+}
+
+async fn scripts_handler() -> axum::response::Response {
+    use axum::body::Body;
+    use axum::http::header;
+    use axum::response::Response;
+
+    Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, "application/javascript; charset=utf-8")
+        .header(header::CACHE_CONTROL, "public, max-age=3600")
+        .body(Body::from(include_str!("../../templates/scripts.js")))
+        .unwrap()
 }
 
 async fn get_scrobbles_handler(
