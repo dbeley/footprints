@@ -10,7 +10,6 @@ pub struct NoveltyReport {
     pub timeline: Vec<NoveltyPoint>,
     pub summary: NoveltySummary,
     pub new_artists_discovered: Vec<ArtistDiscovery>,
-    pub top_comfort_tracks: Vec<ComfortTrack>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -40,14 +39,6 @@ pub struct ArtistDiscovery {
     pub first_heard: DateTime<Utc>,
     pub period: String,
     pub total_plays: i64,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct ComfortTrack {
-    pub artist: String,
-    pub track: String,
-    pub play_count: i64,
-    pub first_heard: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -96,7 +87,6 @@ pub fn generate_novelty_report(
                 least_exploratory_period: String::new(),
             },
             new_artists_discovered: Vec::new(),
-            top_comfort_tracks: Vec::new(),
         });
     }
 
@@ -160,14 +150,16 @@ pub fn generate_novelty_report(
             .unwrap_or(0);
     }
 
-    // Find top comfort tracks
-    let top_comfort_tracks = find_top_comfort_tracks(&scrobbles, 10);
+    // Reverse timeline to show newest first
+    timeline.reverse();
+
+    // Reverse discoveries to show newest first
+    artist_discoveries.reverse();
 
     Ok(NoveltyReport {
         timeline,
         summary,
         new_artists_discovered: artist_discoveries,
-        top_comfort_tracks,
     })
 }
 
@@ -269,38 +261,6 @@ fn compute_novelty_summary(timeline: &[NoveltyPoint], scrobbles: &[Scrobble]) ->
         most_exploratory_period: most_exploratory,
         least_exploratory_period: least_exploratory,
     }
-}
-
-fn find_top_comfort_tracks(scrobbles: &[Scrobble], limit: usize) -> Vec<ComfortTrack> {
-    let mut track_counts: HashMap<(String, String), (i64, DateTime<Utc>)> = HashMap::new();
-
-    for scrobble in scrobbles {
-        let track_key = (scrobble.artist.clone(), scrobble.track.clone());
-        track_counts
-            .entry(track_key)
-            .and_modify(|(count, first)| {
-                *count += 1;
-                if scrobble.timestamp < *first {
-                    *first = scrobble.timestamp;
-                }
-            })
-            .or_insert((1, scrobble.timestamp));
-    }
-
-    let mut comfort_tracks: Vec<_> = track_counts
-        .into_iter()
-        .map(|((artist, track), (count, first_heard))| ComfortTrack {
-            artist,
-            track,
-            play_count: count,
-            first_heard,
-        })
-        .collect();
-
-    comfort_tracks.sort_by(|a, b| b.play_count.cmp(&a.play_count));
-    comfort_tracks.truncate(limit);
-
-    comfort_tracks
 }
 
 #[cfg(test)]
@@ -438,24 +398,6 @@ mod tests {
     }
 
     #[test]
-    fn test_top_comfort_tracks() {
-        let scrobbles = vec![
-            test_scrobble("2024-01-01T10:00:00Z", "Artist A", "Track 1"),
-            test_scrobble("2024-01-01T10:05:00Z", "Artist A", "Track 1"),
-            test_scrobble("2024-01-01T10:10:00Z", "Artist A", "Track 1"),
-            test_scrobble("2024-01-01T10:15:00Z", "Artist B", "Track 2"),
-            test_scrobble("2024-01-01T10:20:00Z", "Artist B", "Track 2"),
-        ];
-
-        let comfort = find_top_comfort_tracks(&scrobbles, 10);
-
-        assert_eq!(comfort.len(), 2);
-        assert_eq!(comfort[0].artist, "Artist A");
-        assert_eq!(comfort[0].track, "Track 1");
-        assert_eq!(comfort[0].play_count, 3);
-    }
-
-    #[test]
     fn test_novelty_chronological_order() {
         // Integration test: verify novelty decreases over time as expected
         use crate::db::{create_pool, init_database};
@@ -497,22 +439,22 @@ mod tests {
 
         // Verify chronological ordering and novelty progression
         assert_eq!(
-            report.timeline[0].period, "2024-01",
-            "First period should be January"
+            report.timeline[0].period, "2024-03",
+            "First period should be March"
         );
         assert_eq!(
             report.timeline[1].period, "2024-02",
             "Second period should be February"
         );
         assert_eq!(
-            report.timeline[2].period, "2024-03",
-            "Third period should be March"
+            report.timeline[2].period, "2024-01",
+            "Third period should be January"
         );
 
         // Verify novelty ratios decrease over time (early = high, later = low)
-        let jan_novelty = report.timeline[0].novelty_ratio;
+        let mar_novelty = report.timeline[0].novelty_ratio;
         let feb_novelty = report.timeline[1].novelty_ratio;
-        let mar_novelty = report.timeline[2].novelty_ratio;
+        let jan_novelty = report.timeline[2].novelty_ratio;
 
         assert!(
             (jan_novelty - 1.0).abs() < 0.001,

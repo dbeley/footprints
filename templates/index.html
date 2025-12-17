@@ -963,45 +963,6 @@
             margin-left: 4px;
         }
 
-        .comfort-track {
-            background: linear-gradient(135deg, var(--tile), var(--panel));
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 12px;
-            margin: 6px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.2s ease;
-        }
-
-        .comfort-track:hover {
-            border-color: var(--accent);
-            transform: translateX(4px);
-        }
-
-        .comfort-track-info {
-            flex: 1;
-        }
-
-        .comfort-track-name {
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-
-        .comfort-track-artist {
-            color: var(--muted);
-            font-size: 0.9em;
-        }
-
-        .comfort-track-plays {
-            background: rgba(125, 211, 252, 0.15);
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-weight: 700;
-            color: var(--accent);
-        }
-
         /* Sessions Styles */
         .session-card {
             background: var(--tile);
@@ -1841,7 +1802,6 @@
             <div id="noveltySummary"></div>
             <div id="noveltyTimeline"></div>
             <div id="noveltyDiscoveries"></div>
-            <div id="noveltyComfort"></div>
         </div>
     </div>
 
@@ -2555,6 +2515,9 @@
             const granularity = document.getElementById('noveltyGranularity').value;
             const message = document.getElementById('noveltyMessage');
 
+            // Reset pagination when loading new report
+            window.noveltyDiscoveriesPage = 1;
+
             message.innerHTML = `<div style="text-align: center; padding: 40px;">
                 <div class="loading-spinner" style="margin: 0 auto 12px;"></div>
                 <p class="muted">Analyzing your listening patterns...</p>
@@ -2574,7 +2537,6 @@
                 renderNoveltySummary(data.summary);
                 renderNoveltyTimeline(data.timeline);
                 renderNoveltyDiscoveries(data.new_artists_discovered);
-                renderNoveltyComfort(data.top_comfort_tracks);
             } catch (error) {
                 message.innerHTML = `<div style="text-align: center; padding: 40px; color: #ef4444;">
                     <div style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
@@ -2664,9 +2626,22 @@
                 return;
             }
 
+            // Store discoveries for pagination
+            window.noveltyDiscoveries = discoveries;
+            if (!window.noveltyDiscoveriesPage) {
+                window.noveltyDiscoveriesPage = 1;
+            }
+
+            const itemsPerPage = 20;
+            const totalPages = Math.ceil(discoveries.length / itemsPerPage);
+            const currentPage = Math.min(window.noveltyDiscoveriesPage, totalPages);
+            const startIdx = (currentPage - 1) * itemsPerPage;
+            const endIdx = Math.min(startIdx + itemsPerPage, discoveries.length);
+            const pageDiscoveries = discoveries.slice(startIdx, endIdx);
+
             let html = '<div class="section-header"><h3>✨ New Artists Discovered <span class="badge">' + discoveries.length + '</span></h3></div>';
 
-            discoveries.slice(0, 20).forEach(disc => {
+            pageDiscoveries.forEach(disc => {
                 const date = new Date(disc.first_heard);
                 html += `
                     <div class="discovery-card">
@@ -2685,38 +2660,48 @@
                 `;
             });
 
-            if (discoveries.length > 20) {
-                html += `<div style="text-align: center; margin-top: 12px; color: var(--muted);">
-                    Showing 20 of ${discoveries.length} discoveries
-                </div>`;
+            if (discoveries.length > itemsPerPage) {
+                html += `
+                    <div class="inline-actions" style="align-items: center; gap: 12px; margin-top: 16px;">
+                        <button class="ghost" onclick="noveltyDiscoveriesFirstPage()" ${currentPage === 1 ? 'disabled' : ''}>First</button>
+                        <button class="ghost" onclick="noveltyDiscoveriesPrevPage()" ${currentPage === 1 ? 'disabled' : ''}>Previous</button>
+                        <span class="muted">Page ${currentPage} of ${totalPages}</span>
+                        <button class="ghost" onclick="noveltyDiscoveriesNextPage()" ${currentPage === totalPages ? 'disabled' : ''}>Next</button>
+                        <button class="ghost" onclick="noveltyDiscoveriesLastPage()" ${currentPage === totalPages ? 'disabled' : ''}>Last</button>
+                    </div>
+                    <div style="text-align: center; margin-top: 8px; color: var(--muted); font-size: 0.9em;">
+                        Showing ${startIdx + 1}-${endIdx} of ${discoveries.length} discoveries
+                    </div>
+                `;
             }
 
             container.innerHTML = html;
         }
 
-        function renderNoveltyComfort(comfortTracks) {
-            const container = document.getElementById('noveltyComfort');
-            if (comfortTracks.length === 0) {
-                container.innerHTML = '';
-                return;
+        function noveltyDiscoveriesFirstPage() {
+            window.noveltyDiscoveriesPage = 1;
+            renderNoveltyDiscoveries(window.noveltyDiscoveries);
+        }
+
+        function noveltyDiscoveriesPrevPage() {
+            if (window.noveltyDiscoveriesPage > 1) {
+                window.noveltyDiscoveriesPage--;
+                renderNoveltyDiscoveries(window.noveltyDiscoveries);
             }
+        }
 
-            let html = '<div class="section-header"><h3>🎧 Top Comfort Tracks <span class="badge">' + comfortTracks.length + '</span></h3></div>';
+        function noveltyDiscoveriesNextPage() {
+            const totalPages = Math.ceil(window.noveltyDiscoveries.length / 20);
+            if (window.noveltyDiscoveriesPage < totalPages) {
+                window.noveltyDiscoveriesPage++;
+                renderNoveltyDiscoveries(window.noveltyDiscoveries);
+            }
+        }
 
-            comfortTracks.forEach((track, index) => {
-                html += `
-                    <div class="comfort-track">
-                        <div style="color: var(--accent); font-weight: 700; margin-right: 12px;">#${index + 1}</div>
-                        <div class="comfort-track-info">
-                            <div class="comfort-track-name">${escapeHtml(track.track)}</div>
-                            <div class="comfort-track-artist">${escapeHtml(track.artist)}</div>
-                        </div>
-                        <div class="comfort-track-plays">${track.play_count} plays</div>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
+        function noveltyDiscoveriesLastPage() {
+            const totalPages = Math.ceil(window.noveltyDiscoveries.length / 20);
+            window.noveltyDiscoveriesPage = totalPages;
+            renderNoveltyDiscoveries(window.noveltyDiscoveries);
         }
 
         // Transitions Report Functions
