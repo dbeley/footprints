@@ -182,10 +182,10 @@ impl ListenBrainzImporter {
                     "listenbrainz".to_string(),
                 );
 
-                if let Some(album) = &listen.track_metadata.release_name {
-                    if !album.is_empty() {
-                        scrobble = scrobble.with_album(album.clone());
-                    }
+                if let Some(album) = &listen.track_metadata.release_name
+                    && !album.is_empty()
+                {
+                    scrobble = scrobble.with_album(album.clone());
                 }
 
                 // Use recording_msid or timestamp as unique identifier for deduplication
@@ -284,10 +284,10 @@ impl ListenBrainzImporter {
                     "listenbrainz".to_string(),
                 );
 
-                if let Some(album) = &listen.track_metadata.release_name {
-                    if !album.is_empty() {
-                        scrobble = scrobble.with_album(album.clone());
-                    }
+                if let Some(album) = &listen.track_metadata.release_name
+                    && !album.is_empty()
+                {
+                    scrobble = scrobble.with_album(album.clone());
                 }
 
                 // Use recording_msid or timestamp as unique identifier

@@ -1,9 +1,9 @@
 use axum::{
+    Router,
     extract::{Path, Query, State},
     http::StatusCode,
     response::{Html, Json},
     routing::{get, post},
-    Router,
 };
 use chrono::{DateTime, Datelike, Duration, Utc};
 use serde::{Deserialize, Serialize};
@@ -64,6 +64,7 @@ pub fn create_router(
         .route("/api/scrobbles", get(get_scrobbles_handler))
         .route("/api/stats", get(get_stats_handler))
         .route("/api/stats/ui", get(get_stats_ui_handler))
+        .route("/api/years", get(get_available_years_handler))
         .route("/api/pulse", get(get_pulse_handler))
         .route("/api/import", post(import_handler))
         .route("/api/sync/config", post(create_sync_config_handler))
@@ -78,6 +79,16 @@ pub fn create_router(
         .route("/api/export", get(export_handler))
         .route("/api/reports/:type", get(get_report_handler))
         .route("/api/reports/monthly", get(get_monthly_report_handler))
+        .route("/api/reports/sessions", get(get_sessions_handler))
+        .route("/api/reports/heatmap", get(get_heatmap_handler))
+        .route("/api/reports/novelty", get(get_novelty_handler))
+        .route("/api/reports/transitions", get(get_transitions_handler))
+        .route("/api/reports/diversity", get(get_diversity_handler))
+        .route("/api/reports/yearly/:year", get(get_yearly_handler))
+        .route(
+            "/api/reports/yearly/:year/compare/:year2",
+            get(get_year_comparison_handler),
+        )
         .route("/api/timeline", get(get_timeline_handler))
         .with_state(Arc::new(state))
 }
@@ -113,6 +124,15 @@ async fn get_stats_handler(
             Ok(Json(stats))
         }
         _ => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+async fn get_available_years_handler(
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<Vec<i32>>, StatusCode> {
+    match crate::db::get_available_years(&state.pool) {
+        Ok(years) => Ok(Json(years)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
 }
 
@@ -218,6 +238,244 @@ async fn get_timeline_handler(
 }
 
 #[derive(Deserialize)]
+struct SessionsParams {
+    start: Option<String>,
+    end: Option<String>,
+    #[serde(default = "default_gap_minutes")]
+    gap_minutes: i64,
+    source: Option<String>,
+    #[serde(default = "default_min_tracks")]
+    min_tracks: usize,
+}
+
+fn default_gap_minutes() -> i64 {
+    45
+}
+
+fn default_min_tracks() -> usize {
+    2
+}
+
+async fn get_sessions_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<SessionsParams>,
+) -> Result<Json<reports::sessions::SessionsReport>, StatusCode> {
+    // Parse date strings
+    let start = params
+        .start
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    let end = params
+        .end
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    match reports::sessions::generate_sessions_report(
+        &state.pool,
+        start,
+        end,
+        params.gap_minutes,
+        params.source,
+        params.min_tracks,
+    ) {
+        Ok(report) => Ok(Json(report)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+#[derive(Deserialize)]
+struct HeatmapParams {
+    start: Option<String>,
+    end: Option<String>,
+    #[serde(default = "default_timezone")]
+    timezone: String,
+    #[serde(default)]
+    normalize: bool,
+}
+
+fn default_timezone() -> String {
+    "UTC".to_string()
+}
+
+async fn get_heatmap_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<HeatmapParams>,
+) -> Result<Json<reports::heatmap::HeatmapReport>, StatusCode> {
+    // Parse timezone
+    let timezone = params
+        .timezone
+        .parse::<chrono_tz::Tz>()
+        .unwrap_or(chrono_tz::UTC);
+
+    // Parse date strings
+    let start = params
+        .start
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    let end = params
+        .end
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    match reports::heatmap::generate_heatmap(&state.pool, start, end, timezone, params.normalize) {
+        Ok(report) => Ok(Json(report)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+#[derive(Deserialize)]
+struct NoveltyParams {
+    start: Option<String>,
+    end: Option<String>,
+    #[serde(default = "default_granularity")]
+    granularity: String,
+}
+
+fn default_granularity() -> String {
+    "week".to_string()
+}
+
+async fn get_novelty_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<NoveltyParams>,
+) -> Result<Json<reports::novelty::NoveltyReport>, StatusCode> {
+    // Parse granularity
+    let granularity = match params.granularity.to_lowercase().as_str() {
+        "day" => reports::novelty::Granularity::Day,
+        "week" => reports::novelty::Granularity::Week,
+        "month" => reports::novelty::Granularity::Month,
+        _ => reports::novelty::Granularity::Week,
+    };
+
+    // Parse date strings
+    let start = params
+        .start
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    let end = params
+        .end
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    match reports::novelty::generate_novelty_report(&state.pool, start, end, granularity) {
+        Ok(report) => Ok(Json(report)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+#[derive(Deserialize)]
+struct TransitionsParams {
+    start: Option<String>,
+    end: Option<String>,
+    #[serde(default = "default_gap_minutes")]
+    gap_minutes: i64,
+    #[serde(default = "default_min_count")]
+    min_count: i64,
+    #[serde(default)]
+    include_self_transitions: bool,
+}
+
+fn default_min_count() -> i64 {
+    2
+}
+
+async fn get_transitions_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<TransitionsParams>,
+) -> Result<Json<reports::transitions::TransitionsReport>, StatusCode> {
+    // Parse date strings
+    let start = params
+        .start
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    let end = params
+        .end
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    match reports::transitions::generate_transitions_report(
+        &state.pool,
+        start,
+        end,
+        params.gap_minutes,
+        params.min_count,
+        params.include_self_transitions,
+    ) {
+        Ok(report) => Ok(Json(report)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+#[derive(Deserialize)]
+struct DiversityParams {
+    #[serde(default = "default_granularity")]
+    granularity: String,
+    start: Option<String>,
+    end: Option<String>,
+}
+
+async fn get_diversity_handler(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<DiversityParams>,
+) -> Result<Json<reports::diversity::DiversityReport>, StatusCode> {
+    let start = params
+        .start
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    let end = params
+        .end
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|dt| dt.with_timezone(&Utc));
+
+    let granularity = match params.granularity.as_str() {
+        "day" => reports::diversity::Granularity::Day,
+        "week" => reports::diversity::Granularity::Week,
+        "month" => reports::diversity::Granularity::Month,
+        _ => reports::diversity::Granularity::Week,
+    };
+
+    match reports::diversity::generate_diversity_report(&state.pool, start, end, granularity) {
+        Ok(report) => Ok(Json(report)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+async fn get_yearly_handler(
+    State(state): State<Arc<AppState>>,
+    Path(year): Path<i32>,
+) -> Result<Json<reports::yearly::YearlyReport>, StatusCode> {
+    match reports::yearly::generate_yearly_report(&state.pool, year) {
+        Ok(report) => Ok(Json(report)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+async fn get_year_comparison_handler(
+    State(state): State<Arc<AppState>>,
+    Path((year1, year2)): Path<(i32, i32)>,
+) -> Result<Json<reports::yearly::YearComparison>, StatusCode> {
+    match reports::yearly::generate_year_comparison(&state.pool, year1, year2) {
+        Ok(comparison) => Ok(Json(comparison)),
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
+}
+
+#[derive(Deserialize)]
 struct StatsUiParams {
     #[serde(default = "default_period")]
     period: String,
@@ -295,15 +553,15 @@ async fn get_stats_ui_handler(
             .flatten();
 
         // fallback: use top album cover for this artist
-        if image_url.is_none() {
-            if let Ok(Some(album)) = crate::db::get_top_album_for_artist(&state.pool, &name) {
-                image_url = state
-                    .image_service
-                    .get_image_url(ImageRequest::album(name.clone(), album))
-                    .await
-                    .ok()
-                    .flatten();
-            }
+        if image_url.is_none()
+            && let Ok(Some(album)) = crate::db::get_top_album_for_artist(&state.pool, &name)
+        {
+            image_url = state
+                .image_service
+                .get_image_url(ImageRequest::album(name.clone(), album))
+                .await
+                .ok()
+                .flatten();
         }
         artists_with_images.push(ArtistWithImage {
             name,
@@ -333,15 +591,15 @@ async fn get_stats_ui_handler(
         }
 
         // fallback 2: try the most common album for this track
-        if image_url.is_none() {
-            if let Ok(Some(album)) = crate::db::get_album_for_track(&state.pool, &artist, &track) {
-                image_url = state
-                    .image_service
-                    .get_image_url(ImageRequest::album(artist.clone(), album))
-                    .await
-                    .ok()
-                    .flatten();
-            }
+        if image_url.is_none()
+            && let Ok(Some(album)) = crate::db::get_album_for_track(&state.pool, &artist, &track)
+        {
+            image_url = state
+                .image_service
+                .get_image_url(ImageRequest::album(artist.clone(), album))
+                .await
+                .ok()
+                .flatten();
         }
         tracks_with_images.push(TrackWithImage {
             artist,
