@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Footprints - music history dashboard</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap');
 
@@ -925,6 +926,57 @@
             margin: 16px 0;
         }
 
+        .network-container {
+            background: var(--tile);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            margin: 16px 0;
+            position: relative;
+            min-height: 600px;
+        }
+
+        .network-container svg {
+            width: 100%;
+            height: 600px;
+        }
+
+        .network-node {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .network-node:hover {
+            stroke: var(--accent);
+            stroke-width: 3px;
+        }
+
+        .network-link {
+            stroke: var(--border);
+            stroke-opacity: 0.6;
+        }
+
+        .network-label {
+            font-size: 12px;
+            fill: var(--text);
+            pointer-events: none;
+            text-anchor: middle;
+            font-weight: 600;
+        }
+
+        .network-tooltip {
+            position: absolute;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            z-index: 1000;
+            max-width: 300px;
+            box-shadow: var(--shadow);
+        }
+
         .network-placeholder-icon {
             font-size: 48px;
             margin-bottom: 12px;
@@ -1682,9 +1734,10 @@
                 <label>
                     <span>Granularity:</span>
                     <select id="diversityGranularity">
-                        <option value="day">Day</option>
-                        <option value="week" selected>Week</option>
-                        <option value="month">Month</option>
+                        <option value="day">Daily</option>
+                        <option value="week" selected>Weekly</option>
+                        <option value="month">Monthly</option>
+                        <option value="year">Yearly</option>
                     </select>
                 </label>
                 <button onclick="loadDiversityReport()">📊 Analyze Diversity</button>
@@ -2793,22 +2846,180 @@
         function renderTransitionsNetwork(network) {
             const container = document.getElementById('transitionsNetwork');
 
+            if (!network.nodes || network.nodes.length === 0) {
+                container.innerHTML = `
+                    <div class="network-placeholder">
+                        <div class="network-placeholder-icon">🌐</div>
+                        <h3 style="color: var(--text); margin-bottom: 8px;">No Network Data</h3>
+                        <p class="muted">No artist transitions found. Try adjusting the filters.</p>
+                    </div>
+                `;
+                return;
+            }
+
             let html = '<div class="section-header"><h3>🕸️ Network Graph</h3></div>';
-            html += `
-                <div class="network-placeholder">
-                    <div class="network-placeholder-icon">🌐</div>
-                    <h3 style="color: var(--text); margin-bottom: 8px;">Interactive Network Visualization</h3>
-                    <p class="muted" style="margin-bottom: 12px;">
-                        ${network.nodes.length} artists • ${network.edges.length} connections
-                    </p>
-                    <p class="muted">
-                        D3.js force-directed graph coming soon!<br>
-                        This will show how artists connect through your listening patterns.
-                    </p>
-                </div>
-            `;
+            html += '<div class="network-container" id="networkViz"></div>';
+            html += '<div class="network-tooltip" id="networkTooltip"></div>';
 
             container.innerHTML = html;
+
+            // Render D3.js force-directed graph
+            renderD3Network(network);
+        }
+
+        function renderD3Network(network) {
+            const container = document.getElementById('networkViz');
+            const width = container.clientWidth || 1200;
+            const height = 600;
+
+            // Clear any existing SVG
+            d3.select('#networkViz').selectAll('svg').remove();
+
+            // Create SVG
+            const svg = d3.select('#networkViz')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height)
+                .attr('viewBox', [0, 0, width, height]);
+
+            // Create tooltip
+            const tooltip = d3.select('#networkTooltip');
+
+            // Prepare data - limit to top nodes to avoid overcrowding
+            const maxNodes = 50;
+            const topNodes = network.nodes
+                .sort((a, b) => b.size - a.size)
+                .slice(0, maxNodes);
+
+            const nodeIds = new Set(topNodes.map(n => n.id));
+
+            // Filter edges to only include edges between top nodes
+            const edges = network.edges.filter(e =>
+                nodeIds.has(e.source) && nodeIds.has(e.target)
+            );
+
+            // Create a map for quick lookup
+            const nodeMap = new Map(topNodes.map(n => [n.id, n]));
+
+            // Scale for node sizes
+            const sizeScale = d3.scaleSqrt()
+                .domain([0, d3.max(topNodes, d => d.size)])
+                .range([5, 30]);
+
+            // Create force simulation
+            const simulation = d3.forceSimulation(topNodes)
+                .force('link', d3.forceLink(edges)
+                    .id(d => d.id)
+                    .distance(100)
+                    .strength(0.5))
+                .force('charge', d3.forceManyBody()
+                    .strength(-300))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('collision', d3.forceCollide().radius(d => sizeScale(d.size) + 5));
+
+            // Create links
+            const link = svg.append('g')
+                .selectAll('line')
+                .data(edges)
+                .join('line')
+                .attr('class', 'network-link')
+                .attr('stroke-width', d => Math.sqrt(d.weight) * 0.5);
+
+            // Create nodes
+            const node = svg.append('g')
+                .selectAll('circle')
+                .data(topNodes)
+                .join('circle')
+                .attr('class', 'network-node')
+                .attr('r', d => sizeScale(d.size))
+                .attr('fill', 'var(--accent)')
+                .attr('stroke', 'var(--border)')
+                .attr('stroke-width', 2)
+                .on('mouseover', function(event, d) {
+                    // Highlight connected nodes
+                    const connectedNodeIds = new Set();
+                    edges.forEach(e => {
+                        if (e.source.id === d.id) connectedNodeIds.add(e.target.id);
+                        if (e.target.id === d.id) connectedNodeIds.add(e.source.id);
+                    });
+
+                    node.attr('opacity', n =>
+                        n.id === d.id || connectedNodeIds.has(n.id) ? 1 : 0.3
+                    );
+
+                    link.attr('opacity', e =>
+                        e.source.id === d.id || e.target.id === d.id ? 1 : 0.1
+                    );
+
+                    // Show tooltip
+                    const connections = edges.filter(e =>
+                        e.source.id === d.id || e.target.id === d.id
+                    ).length;
+
+                    tooltip
+                        .style('opacity', 1)
+                        .style('left', (event.pageX + 10) + 'px')
+                        .style('top', (event.pageY - 10) + 'px')
+                        .html(`
+                            <div style="font-weight: 700; margin-bottom: 4px;">${escapeHtml(d.label)}</div>
+                            <div style="color: var(--muted); font-size: 0.9em;">
+                                ${d.size} plays<br>
+                                ${connections} connections
+                            </div>
+                        `);
+                })
+                .on('mouseout', function() {
+                    node.attr('opacity', 1);
+                    link.attr('opacity', 1);
+                    tooltip.style('opacity', 0);
+                })
+                .call(d3.drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended));
+
+            // Create labels for larger nodes
+            const label = svg.append('g')
+                .selectAll('text')
+                .data(topNodes.filter(d => d.size > d3.quantile(topNodes.map(n => n.size), 0.7)))
+                .join('text')
+                .attr('class', 'network-label')
+                .text(d => d.label.length > 15 ? d.label.substring(0, 15) + '...' : d.label);
+
+            // Update positions on each tick
+            simulation.on('tick', () => {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                node
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+
+                label
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y + sizeScale(d.size) + 15);
+            });
+
+            // Drag functions
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
         }
 
         // Heatmap Report Functions
